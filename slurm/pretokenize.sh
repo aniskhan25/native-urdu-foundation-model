@@ -10,6 +10,7 @@
 set -euo pipefail
 
 module use /appl/local/csc/modulefiles/
+module load cray-python
 module load pytorch
 
 PROJECT_ID="project_462000131"
@@ -19,17 +20,16 @@ DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundati
 COMPILED_DIR="${COMPILED_DIR:-${DATA_ROOT}/compiled}"
 TOKENIZER_MODEL="${TOKENIZER_MODEL:-${DATA_ROOT}/tokenizer/urdu_bpe_32k.model}"
 TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
+VENV_DIR="${VENV_DIR:-${DATA_ROOT}/venv}"
 
 mkdir -p "${TOKENIZED_ROOT}"
 cd "${REPO_DIR}"
 
-if [ -d ".venv" ]; then
-  source .venv/bin/activate
-else
-  python3 -m venv .venv
-  source .venv/bin/activate
-  python -m pip install -r requirements.txt
+if [ ! -f "${VENV_DIR}/bin/activate" ]; then
+  echo "Missing venv at ${VENV_DIR}. Run scripts/install_venv.sh before submitting jobs." >&2
+  exit 1
 fi
+source "${VENV_DIR}/bin/activate"
 
 python data_pipeline/tokenize_shards.py \
   --input "${COMPILED_DIR}/fineweb2_urd_arab.jsonl" \

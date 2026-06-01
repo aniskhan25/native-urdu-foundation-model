@@ -118,6 +118,9 @@ The local `data/` directory is for pilots only. Full corpus compilation should w
 Suggested LUMI flow:
 
 ```bash
+module use /appl/local/csc/modulefiles/
+module load cray-python
+./scripts/install_venv.sh
 sbatch slurm/compile_corpus.sh
 sbatch slurm/train_tokenizer.sh
 sbatch slurm/pretokenize.sh
@@ -128,4 +131,5 @@ Current Slurm defaults are:
 ```text
 REPO_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-model
 DATA_ROOT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data
+VENV_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/venv
 ```

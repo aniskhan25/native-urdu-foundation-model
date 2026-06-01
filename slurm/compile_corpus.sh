@@ -10,6 +10,10 @@
 
 set -euo pipefail
 
+module use /appl/local/csc/modulefiles/
+module load cray-python
+module load pytorch
+
 PROJECT_ID="project_462000131"
 USER_NAME="${USER:-anisrahm}"
 REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
@@ -17,6 +21,7 @@ DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundati
 HF_HOME="${HF_HOME:-${DATA_ROOT}/hf_cache}"
 HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-${HF_HOME}/datasets}"
 OUTPUT_DIR="${OUTPUT_DIR:-${DATA_ROOT}/compiled}"
+VENV_DIR="${VENV_DIR:-${DATA_ROOT}/venv}"
 
 export HF_HOME
 export HF_DATASETS_CACHE
@@ -28,13 +33,11 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 mkdir -p "${OUTPUT_DIR}" "${HF_DATASETS_CACHE}"
 cd "${REPO_DIR}"
 
-if [ -d ".venv" ]; then
-  source .venv/bin/activate
-else
-  python3 -m venv .venv
-  source .venv/bin/activate
-  python -m pip install -r requirements.txt
+if [ ! -f "${VENV_DIR}/bin/activate" ]; then
+  echo "Missing venv at ${VENV_DIR}. Run scripts/install_venv.sh before submitting jobs." >&2
+  exit 1
 fi
+source "${VENV_DIR}/bin/activate"
 
 python -m data_pipeline.compile_corpus \
   --source fineweb2_urd_arab \

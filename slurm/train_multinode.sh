@@ -11,6 +11,7 @@
 set -euo pipefail
 
 module use /appl/local/csc/modulefiles/
+module load cray-python
 module load pytorch
 
 PROJECT_ID="project_462000131"

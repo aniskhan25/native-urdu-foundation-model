@@ -10,12 +10,17 @@
 
 set -euo pipefail
 
+module use /appl/local/csc/modulefiles/
+module load cray-python
+module load pytorch
+
 PROJECT_ID="project_462000131"
 USER_NAME="${USER:-anisrahm}"
 REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
 DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundation-data}"
 COMPILED_DIR="${COMPILED_DIR:-${DATA_ROOT}/compiled}"
 TOKENIZER_ROOT="${TOKENIZER_ROOT:-${DATA_ROOT}/tokenizer}"
+VENV_DIR="${VENV_DIR:-${DATA_ROOT}/venv}"
 
 export TOKENIZERS_PARALLELISM=false
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
@@ -23,13 +28,11 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 mkdir -p "${TOKENIZER_ROOT}"
 cd "${REPO_DIR}"
 
-if [ -d ".venv" ]; then
-  source .venv/bin/activate
-else
-  python3 -m venv .venv
-  source .venv/bin/activate
-  python -m pip install -r requirements.txt
+if [ ! -f "${VENV_DIR}/bin/activate" ]; then
+  echo "Missing venv at ${VENV_DIR}. Run scripts/install_venv.sh before submitting jobs." >&2
+  exit 1
 fi
+source "${VENV_DIR}/bin/activate"
 
 python tokenizer/train_urdu_bpe_tokenizer.py \
   --input "${COMPILED_DIR}" \

@@ -1,0 +1,128 @@
+corpus_plan:
+  name: native_urdu_foundation_corpus_v1
+  target_tokens: 10000000000
+  normalization: custom_urdu_nfkc_then_nfc_v1
+  storage_policy:
+    local_workspace: pilot_only
+    project_id: project_462000131
+    repo_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-model
+    full_corpus_root: /scratch/project_462000131/anisrahm/native-urdu-foundation-data
+    lumi_fast_scratch_example: /scratch/project_462000131/anisrahm/native-urdu-foundation-data
+    lumi_persistent_scratch_example: /pfs/lustrep4/scratch/project_462000131/anisrahm/native-urdu-foundation-data
+    notes: >
+      Full corpus shards, Hugging Face cache, tokenized shards, and checkpoints
+      should live on LUMI scratch or project storage, not in this Git workspace.
+      The code checkout lives in repo_dir; large data artifacts live in
+      full_corpus_root.
+  selection_policy: >
+    Use multiple sources, because no single open Urdu corpus provides enough
+    clean, genre-diverse text for a foundation model. FineWeb2 is the primary
+    web backbone, HPLT adds independent web coverage, Maḵẖzan/Wikisource add
+    curated long-form Urdu, and English Wikipedia is kept as a small replay
+    buffer.
+
+selected_sources:
+  urdu_web:
+    target_weight: 0.72
+    sources:
+      - id: fineweb2_urd_arab
+        name: FineWeb2 Urdu Arab subset
+        url: https://huggingface.co/datasets/HuggingFaceFW/fineweb-2
+        license: ODC-By-1.0 plus CommonCrawl terms
+        priority: primary
+        target_share_within_bucket: 0.60
+        fields:
+          text: text
+          url: url
+          timestamp: date
+          source_id: id
+        notes: Primary web-scale Urdu source. Run local Urdu normalization, LID, quality filtering, and cross-source dedup.
+      - id: hplt_ur_cleaned
+        name: HPLT Urdu cleaned/deduplicated
+        url: https://huggingface.co/datasets/HPLT/hplt_monolingual_v1_2
+        license: CC0 packaging; source text rights not owned by HPLT
+        priority: secondary
+        target_share_within_bucket: 0.25
+        config_preference:
+          - ur_cleaned
+          - ur_deduplicated
+        fields:
+          text: text
+          url: url
+          source_id: id
+        notes: Use cleaned config first. Deduplicate against FineWeb2 before sampling.
+      - id: mc4_ur
+        name: mC4/C4 Urdu
+        url: https://huggingface.co/datasets/allenai/c4
+        license: ODC-By plus CommonCrawl terms
+        priority: tertiary
+        target_share_within_bucket: 0.10
+        fields:
+          text: text
+          url: url
+          timestamp: timestamp
+        notes: Use as diversity filler only after stronger filtering and dedup.
+      - id: urdu_wikipedia
+        name: Urdu Wikipedia
+        url: https://dumps.wikimedia.org/urwiki/latest/
+        license: CC-BY-SA/GFDL family; verify current dump terms
+        priority: curated_web
+        target_share_within_bucket: 0.05
+        notes: High-signal encyclopedia text. Hold out a clean eval split before adding any train portion.
+
+  urdu_literature:
+    target_weight: 0.20
+    sources:
+      - id: makhzan_urdu
+        name: Maḵẖzan Urdu corpus
+        url: https://huggingface.co/datasets/ReySajju742/makhzan-urdu
+        license: Free use stated; raw republication restricted
+        priority: primary
+        target_share_within_bucket: 0.55
+        fields:
+          text: text
+        notes: Main curated Urdu long-form source. Do not republish raw text.
+      - id: wikimedia_wikisource_ur
+        name: Urdu Wikisource / Wikimedia Wikisource
+        url: https://huggingface.co/datasets/wikimedia/wikisource
+        license: Wikimedia project licensing; usually CC-BY-SA-family with source-specific terms
+        priority: secondary
+        target_share_within_bucket: 0.25
+        fields:
+          text: text
+        notes: Good for public-domain/classic long-form when Urdu subset is available.
+      - id: kaleem_art_press
+        name: Kaleem Art Press Urdu Literature Corpus
+        url: https://datacollective.mozillafoundation.org/datasets/cmiq9o5rn004wns07zry0skak
+        license: verify before ingestion
+        priority: conditional
+        target_share_within_bucket: 0.20
+        notes: Use only after license/provenance review.
+
+  english_replay:
+    target_weight: 0.08
+    sources:
+      - id: english_wikipedia
+        name: English Wikipedia
+        url: https://dumps.wikimedia.org/enwiki/latest/
+        license: CC-BY-SA/GFDL family; verify current dump terms
+        priority: primary
+        target_share_within_bucket: 1.00
+        notes: Small high-quality replay buffer for reasoning, structure, and English retention.
+
+rejected_or_deferred:
+  - id: qalb_pretraining_corpus
+    reason: Qalb paper reports a corpus, but I did not find a separately released downloadable pretraining dataset.
+  - id: qalb_arabic_language_bank
+    reason: Arabic grammatical error correction data, not Urdu pretraining data.
+  - id: random_hf_urdu_task_datasets
+    reason: Useful for evaluation or SFT, but not appropriate as base pretraining backbone without provenance review.
+
+required_processing:
+  - preserve raw text and source metadata
+  - normalize with custom_urdu_nfkc_then_nfc_v1 before tokenizer training
+  - run script-level Urdu filter and model-based Urdu-vs-Arabic/Persian LID
+  - exact dedup within source
+  - near dedup across all selected sources
+  - hold out validation/evaluation before final dedup and packing
+  - record license and checksum metadata for every imported shard

@@ -1,0 +1,44 @@
+project: native_urdu_foundation_model
+target_tokens: 10000000000
+tokenizer:
+  path: tokenizer/urdu_bpe_32k.model
+  vocab_size: 32000
+  normalization: custom_urdu_nfkc_then_nfc_v1
+data_mixture:
+  urdu_web: 0.72
+  urdu_literature: 0.20
+  english_replay: 0.08
+model:
+  architecture: decoder_only_llama_style
+  params: 1300000000
+  hidden_size: 2048
+  layers: 24
+  attention_heads: 16
+  kv_heads: 8
+  intermediate_size: 5504
+  seq_len: 4096
+  activation: swiglu
+  norm: rmsnorm
+  position_embedding: rope
+  rope_theta: 10000
+  tie_embeddings: true
+training:
+  precision: bf16
+  optimizer: adamw
+  lr: 0.00025
+  min_lr_ratio: 0.1
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-8
+  global_batch_tokens: 2000000
+  steps_for_target_tokens: 5000
+  warmup_tokens: 100000000
+  grad_clip: 1.0
+  activation_checkpointing: true
+infrastructure:
+  platform: LUMI-G
+  backend: pytorch_rocm_rccl
+  parallelism: fsdp_full_shard
+  checkpoint_interval_tokens: 250000000
+

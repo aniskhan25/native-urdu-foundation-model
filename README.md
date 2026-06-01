@@ -1,0 +1,131 @@
+# Native Urdu Foundation Model
+
+This repository scaffolds a native Urdu decoder-only language model project for PyTorch + LUMI-G.
+
+The initial target is a 350M-1.3B parameter model trained from scratch on 5B-10B tokens with:
+
+- Urdu web text
+- Urdu literature and curated long-form text
+- A small high-quality English replay buffer
+
+The highest-risk parts are data quality, Unicode normalization, deduplication, and tokenizer fertility. The code in this repository starts there.
+
+## Repository Layout
+
+```text
+configs/                 Training and tokenizer configuration
+data_pipeline/           Normalization, filtering, deduplication, sharding utilities
+docs/                    Data/model/normalization documentation
+eval/                    Evaluation placeholders and contamination checks
+slurm/                   LUMI Slurm job templates
+tokenizer/               SentencePiece BPE tokenizer training
+training/                Training placeholders and model configs
+tests/                   Unit tests for core pipeline behavior
+```
+
+## Quick Start
+
+Install local dependencies:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Normalize plain text:
+
+```bash
+python data_pipeline/normalize_urdu.py \
+  --input raw.txt \
+  --output normalized.txt
+```
+
+Normalize JSONL while preserving raw text:
+
+```bash
+python data_pipeline/normalize_urdu.py \
+  --input raw.jsonl \
+  --output normalized.jsonl \
+  --jsonl \
+  --text-key raw_text \
+  --normalized-key normalized_text
+```
+
+Compile a pilot corpus shard from the selected source plan:
+
+```bash
+python -m data_pipeline.compile_corpus \
+  --source fineweb2_urd_arab \
+  --max-docs-per-source 1000 \
+  --output-dir data/compiled \
+  --force-exit
+```
+
+Compile multiple selected sources:
+
+```bash
+python -m data_pipeline.compile_corpus \
+  --source fineweb2_urd_arab \
+  --source makhzan_urdu \
+  --max-docs-per-source 10000 \
+  --max-scanned-per-source 20000 \
+  --output-dir data/compiled \
+  --force-exit
+```
+
+Summarize compiled shards:
+
+```bash
+python -m data_pipeline.summarize_corpus data/compiled/*.jsonl
+```
+
+Train a 32k Urdu BPE tokenizer:
+
+```bash
+python tokenizer/train_urdu_bpe_tokenizer.py \
+  --input /path/to/clean_urdu_web /path/to/clean_urdu_literature \
+  --model-prefix tokenizer/urdu_bpe_32k \
+  --vocab-size 32000 \
+  --max-lines 2000000
+```
+
+Run tests:
+
+```bash
+python -m unittest discover -s tests
+```
+
+## Default Target
+
+The default project target is encoded in [configs/urdu_1_3b.yaml](configs/urdu_1_3b.yaml):
+
+- 1.3B parameter LLaMA-style decoder-only transformer
+- 32k SentencePiece BPE tokenizer
+- 4096 token context
+- BF16 AdamW training
+- FSDP full-shard on LUMI-G
+- 72% Urdu web, 20% Urdu literature, 8% English replay
+
+## LUMI Scratch Storage
+
+The local `data/` directory is for pilots only. Full corpus compilation should write to LUMI scratch or project storage, for example:
+
+```bash
+/scratch/project_462000131/anisrahm/native-urdu-foundation-data
+```
+
+Suggested LUMI flow:
+
+```bash
+sbatch slurm/compile_corpus.slurm
+sbatch slurm/train_tokenizer.slurm
+sbatch slurm/pretokenize.slurm
+```
+
+Current Slurm defaults are:
+
+```text
+REPO_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-model
+DATA_ROOT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data
+```

@@ -1,0 +1,20 @@
+tokenizer:
+  type: sentencepiece_bpe
+  vocab_size: 32000
+  byte_fallback: false
+  character_coverage: 1.0
+  normalization: custom_urdu_nfkc_then_nfc_v1
+  special_tokens:
+    unk_id: 0
+    bos_id: 1
+    eos_id: 2
+    pad_id: 3
+  training_mixture:
+    urdu_web: 0.70
+    urdu_literature: 0.25
+    english_replay: 0.05
+  sampling:
+    max_lines: 2000000
+    min_chars: 50
+    seed: 42
+

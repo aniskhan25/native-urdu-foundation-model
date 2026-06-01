@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+.pycache/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Tokenizer and training artifacts
+*.model
+*.vocab
+*.tokenizer_sample.txt
+*.bin
+*.idx
+checkpoints/
+runs/
+wandb/
+data/

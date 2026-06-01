@@ -23,6 +23,14 @@ TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
 mkdir -p "${TOKENIZED_ROOT}"
 cd "${REPO_DIR}"
 
+if [ -d ".venv" ]; then
+  source .venv/bin/activate
+else
+  python3 -m venv .venv
+  source .venv/bin/activate
+  python -m pip install -r requirements.txt
+fi
+
 python data_pipeline/tokenize_shards.py \
   --input "${COMPILED_DIR}/fineweb2_urd_arab.jsonl" \
   --output-prefix "${TOKENIZED_ROOT}/fineweb2_urd_arab" \

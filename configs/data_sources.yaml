@@ -80,8 +80,8 @@ selected_sources:
         priority: primary
         target_share_within_bucket: 0.55
         fields:
-          text: text
-        notes: Main curated Urdu long-form source. Do not republish raw text.
+          text: xml
+        notes: Main curated Urdu long-form source. Compiler extracts body text from XML. Do not republish raw text.
       - id: wikimedia_wikisource_ur
         name: Urdu Wikisource / Wikimedia Wikisource
         url: https://huggingface.co/datasets/wikimedia/wikisource

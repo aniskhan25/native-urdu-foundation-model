@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -73,7 +74,7 @@ SOURCE_LOADERS: dict[str, dict[str, Any]] = {
         "hf_dataset": "ReySajju742/makhzan-urdu",
         "hf_config": None,
         "split": "train",
-        "text_fields": ["text", "content"],
+        "text_fields": ["xml"],
         "url_fields": ["url"],
         "timestamp_fields": ["timestamp", "date"],
     },
@@ -90,6 +91,9 @@ SOURCE_LOADERS: dict[str, dict[str, Any]] = {
     },
 }
 
+XML_TAG_RE = re.compile(r"<[^>]+>")
+BODY_RE = re.compile(r"<body[^>]*>(.*?)</body>", re.DOTALL | re.IGNORECASE)
+
 
 def first_present(record: dict[str, Any], field_names: Iterable[str]) -> Any:
     for field_name in field_names:
@@ -97,13 +101,6 @@ def first_present(record: dict[str, Any], field_names: Iterable[str]) -> Any:
         if value is not None and value != "":
             return value
     return None
-
-
-def longest_string_field(record: dict[str, Any]) -> str | None:
-    values = [value for value in record.values() if isinstance(value, str)]
-    if not values:
-        return None
-    return max(values, key=len)
 
 
 def stable_doc_id(source_id: str, text: str, fallback_index: int) -> str:
@@ -152,6 +149,25 @@ def load_hf_stream(loader: dict[str, Any]) -> Iterable[dict[str, Any]]:
     return load_dataset(**kwargs)
 
 
+def strip_xml_text(text: str) -> str:
+    body_match = BODY_RE.search(text)
+    if body_match:
+        text = body_match.group(1)
+    text = XML_TAG_RE.sub(" ", text)
+    return text
+
+
+def extract_raw_text(source_id: str, loader: dict[str, Any], record: dict[str, Any]) -> str | None:
+    raw_text = first_present(record, loader["text_fields"])
+    if raw_text is None:
+        available = ", ".join(sorted(record.keys()))
+        raise KeyError(f"No configured text field for {source_id}; available fields: {available}")
+    raw_text = str(raw_text)
+    if source_id == "makhzan_urdu":
+        return strip_xml_text(raw_text)
+    return raw_text
+
+
 def canonicalize_record(
     *,
     source_id: str,
@@ -163,17 +179,11 @@ def canonicalize_record(
     min_script_ratio: float,
     max_repeated_char_ratio: float,
     max_symbol_ratio: float,
-    min_avg_line_length: float,
 ) -> dict[str, Any] | None:
     if not record_language_allowed(raw_record, loader):
         return None
 
-    raw_text = first_present(raw_record, loader["text_fields"])
-    if raw_text is None and loader.get("fallback_longest_string", True):
-        raw_text = longest_string_field(raw_record)
-    if raw_text is None:
-        return None
-    raw_text = str(raw_text)
+    raw_text = extract_raw_text(source_id, loader, raw_record)
     normalized_text = normalize_urdu(raw_text)
     if not normalized_text:
         return None
@@ -185,7 +195,6 @@ def canonicalize_record(
         min_script_ratio=min_script_ratio,
         max_repeated_char_ratio=max_repeated_char_ratio,
         max_symbol_ratio=max_symbol_ratio,
-        min_avg_line_length=min_avg_line_length,
     ):
         return None
 
@@ -219,7 +228,6 @@ def compile_source(
     min_script_ratio: float,
     max_repeated_char_ratio: float,
     max_symbol_ratio: float,
-    min_avg_line_length: float,
 ) -> dict[str, Any]:
     if source_id not in SOURCE_LOADERS:
         raise KeyError(f"No loader is implemented for source {source_id!r}")
@@ -249,7 +257,6 @@ def compile_source(
                 min_script_ratio=min_script_ratio,
                 max_repeated_char_ratio=max_repeated_char_ratio,
                 max_symbol_ratio=max_symbol_ratio,
-                min_avg_line_length=min_avg_line_length,
             )
             if canonical is None:
                 filtered += 1
@@ -297,7 +304,6 @@ def main() -> None:
     parser.add_argument("--min-script-ratio", type=float, default=0.65)
     parser.add_argument("--max-repeated-char-ratio", type=float, default=0.20)
     parser.add_argument("--max-symbol-ratio", type=float, default=0.15)
-    parser.add_argument("--min-avg-line-length", type=float, default=20.0)
     parser.add_argument(
         "--force-exit",
         action="store_true",
@@ -320,7 +326,6 @@ def main() -> None:
                 min_script_ratio=args.min_script_ratio,
                 max_repeated_char_ratio=args.max_repeated_char_ratio,
                 max_symbol_ratio=args.max_symbol_ratio,
-                min_avg_line_length=args.min_avg_line_length,
             )
         )
 

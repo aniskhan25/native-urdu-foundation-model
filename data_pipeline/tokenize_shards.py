@@ -63,6 +63,8 @@ def tokenize_jsonl(
             if not text:
                 continue
             ids = [sp.bos_id()] + sp.encode(text, out_type=int) + [sp.eos_id()]
+            if buffer and len(buffer) + len(ids) > shard_tokens:
+                flush()
             buffer.extend(ids)
             total_tokens += len(ids)
             total_docs += 1
@@ -96,4 +98,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

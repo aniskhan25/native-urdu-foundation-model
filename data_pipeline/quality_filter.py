@@ -24,7 +24,6 @@ class QualityMetrics:
     urdu_script_ratio: float
     repeated_char_ratio: float
     symbol_ratio: float
-    avg_line_length: float
     boilerplate_hits: int
     quality_score: float
 
@@ -35,16 +34,13 @@ def quality_metrics(text: str) -> QualityMetrics:
     char_count = len(normalized)
     repeated_chars = sum(len(match.group(0)) for match in REPEATED_CHAR_RE.finditer(normalized))
     symbols = len(SYMBOL_RE.findall(normalized))
-    lines = [line.strip() for line in normalized.splitlines() if line.strip()]
-    avg_line_length = sum(len(line) for line in lines) / max(1, len(lines))
     boilerplate_hits = len(URLISH_RE.findall(normalized))
 
     repeated_char_ratio = repeated_chars / max(1, char_count)
     symbol_ratio = symbols / max(1, char_count)
     quality_score = (
         0.45 * stats.urdu_script_ratio
-        + 0.25 * min(1.0, char_count / 1200)
-        + 0.15 * min(1.0, avg_line_length / 80)
+        + 0.40 * min(1.0, char_count / 1200)
         - 0.10 * min(1.0, repeated_char_ratio * 5)
         - 0.05 * min(1.0, symbol_ratio * 5)
         - 0.05 * min(1.0, boilerplate_hits / 5)
@@ -54,7 +50,6 @@ def quality_metrics(text: str) -> QualityMetrics:
         urdu_script_ratio=stats.urdu_script_ratio,
         repeated_char_ratio=repeated_char_ratio,
         symbol_ratio=symbol_ratio,
-        avg_line_length=avg_line_length,
         boilerplate_hits=boilerplate_hits,
         quality_score=max(0.0, min(1.0, quality_score)),
     )
@@ -67,14 +62,12 @@ def passes_quality(
     min_script_ratio: float,
     max_repeated_char_ratio: float,
     max_symbol_ratio: float,
-    min_avg_line_length: float,
 ) -> bool:
     return (
         metrics.char_count >= min_chars
         and metrics.urdu_script_ratio >= min_script_ratio
         and metrics.repeated_char_ratio <= max_repeated_char_ratio
         and metrics.symbol_ratio <= max_symbol_ratio
-        and metrics.avg_line_length >= min_avg_line_length
     )
 
 
@@ -99,7 +92,6 @@ def filter_jsonl(input_path: Path, output_path: Path, *, text_key: str, args: ar
                     min_script_ratio=args.min_script_ratio,
                     max_repeated_char_ratio=args.max_repeated_char_ratio,
                     max_symbol_ratio=args.max_symbol_ratio,
-                    min_avg_line_length=args.min_avg_line_length,
                 ):
                     continue
                 kept += 1
@@ -116,7 +108,6 @@ def main() -> None:
     parser.add_argument("--min-script-ratio", type=float, default=0.65)
     parser.add_argument("--max-repeated-char-ratio", type=float, default=0.20)
     parser.add_argument("--max-symbol-ratio", type=float, default=0.15)
-    parser.add_argument("--min-avg-line-length", type=float, default=20.0)
     args = parser.parse_args()
     filter_jsonl(args.input, args.output, text_key=args.text_key, args=args)
 

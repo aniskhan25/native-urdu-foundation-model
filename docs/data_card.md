@@ -48,9 +48,7 @@ Initial drop thresholds:
 | Urdu script ratio | `< 0.65` |
 | Repeated character ratio | `> 0.20` |
 | Symbol ratio | `> 0.15` |
-| Average line length | `< 20 chars` |
 
 ## Deduplication
 
 Use exact normalized-text SHA256 dedup first. Add paragraph-level dedup and MinHash/SimHash near-dedup before freezing the full corpus.
-

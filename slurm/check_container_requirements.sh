@@ -1,21 +1,16 @@
 #!/bin/bash
-#SBATCH --job-name=urdu-manifest
+#SBATCH --job-name=urdu-container-check
 #SBATCH --partition=small
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
-#SBATCH --time=00:30:00
+#SBATCH --time=00:10:00
 #SBATCH --account=project_462000131
 
 set -euo pipefail
 
-module use /appl/local/csc/modulefiles/
-
 REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
-DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundation-data}"
-TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
-MANIFEST_ROOT="${MANIFEST_ROOT:-${DATA_ROOT}/manifests}"
 CONTAINER_IMAGE="${CONTAINER_IMAGE:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 CONTAINER_BINDS="${CONTAINER_BINDS:-/pfs,/users,/projappl,/scratch,/project,/flash}"
 
@@ -24,13 +19,9 @@ if [ ! -f "${CONTAINER_IMAGE}" ]; then
   exit 1
 fi
 
-mkdir -p "${MANIFEST_ROOT}"
 cd "${REPO_DIR}"
 
 singularity exec \
   --bind="${CONTAINER_BINDS}" \
   "${CONTAINER_IMAGE}" \
-  python -m data_pipeline.build_training_manifest \
-  --output "${MANIFEST_ROOT}/dress_rehearsal_manifest.json" \
-  "${TOKENIZED_ROOT}/fineweb2_urd_arab.json" \
-  "${TOKENIZED_ROOT}/makhzan_urdu.json"
+  python scripts/check_container_requirements.py

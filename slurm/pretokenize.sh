@@ -10,8 +10,6 @@
 set -euo pipefail
 
 module use /appl/local/csc/modulefiles/
-module load cray-python
-module load pytorch
 
 PROJECT_ID="project_462000131"
 USER_NAME="${USER:-anisrahm}"
@@ -20,25 +18,31 @@ DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundati
 COMPILED_DIR="${COMPILED_DIR:-${DATA_ROOT}/compiled}"
 TOKENIZER_MODEL="${TOKENIZER_MODEL:-${DATA_ROOT}/tokenizer/urdu_bpe_32k.model}"
 TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
-VENV_DIR="${VENV_DIR:-${DATA_ROOT}/venv}"
+CONTAINER_IMAGE="${CONTAINER_IMAGE:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
+CONTAINER_BINDS="${CONTAINER_BINDS:-/pfs,/users,/projappl,/scratch,/project,/flash}"
 
 mkdir -p "${TOKENIZED_ROOT}"
 cd "${REPO_DIR}"
 
-if [ ! -f "${VENV_DIR}/bin/activate" ]; then
-  echo "Missing venv at ${VENV_DIR}. Run scripts/install_venv.sh before submitting jobs." >&2
+if [ ! -f "${CONTAINER_IMAGE}" ]; then
+  echo "Missing container image: ${CONTAINER_IMAGE}" >&2
   exit 1
 fi
-source "${VENV_DIR}/bin/activate"
 
-python data_pipeline/tokenize_shards.py \
+singularity exec \
+  --bind="${CONTAINER_BINDS}" \
+  "${CONTAINER_IMAGE}" \
+  python data_pipeline/tokenize_shards.py \
   --input "${COMPILED_DIR}/fineweb2_urd_arab.jsonl" \
   --output-prefix "${TOKENIZED_ROOT}/fineweb2_urd_arab" \
   --model "${TOKENIZER_MODEL}" \
   --text-key normalized_text \
   --shard-tokens 134217728
 
-python data_pipeline/tokenize_shards.py \
+singularity exec \
+  --bind="${CONTAINER_BINDS}" \
+  "${CONTAINER_IMAGE}" \
+  python data_pipeline/tokenize_shards.py \
   --input "${COMPILED_DIR}/makhzan_urdu.jsonl" \
   --output-prefix "${TOKENIZED_ROOT}/makhzan_urdu" \
   --model "${TOKENIZER_MODEL}" \

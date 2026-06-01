@@ -118,10 +118,8 @@ The local `data/` directory is for pilots only. Full corpus compilation should w
 Suggested LUMI flow:
 
 ```bash
-module use /appl/local/csc/modulefiles/
-module load cray-python
-./scripts/install_venv.sh
 export HF_TOKEN="hf_..."
+sbatch slurm/check_container_requirements.sh
 sbatch --export=ALL slurm/compile_corpus.sh
 sbatch slurm/train_tokenizer.sh
 sbatch slurm/pretokenize.sh
@@ -146,8 +144,10 @@ Current Slurm defaults are:
 ```text
 REPO_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-model
 DATA_ROOT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data
-VENV_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/venv
+CONTAINER_IMAGE=/appl/local/laifs/containers/lumi-multitorch-latest.sif
 ```
+
+The LUMI Slurm jobs run inside `CONTAINER_IMAGE` directly, so they use the PyTorch/ROCm environment from the LUMI container instead of a separate venv. Run `slurm/check_container_requirements.sh` first; if it reports all modules present, the current container does not need to be extended for this repository.
 
 Prepare the current 685M-token dress rehearsal manifest:
 

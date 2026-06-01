@@ -105,7 +105,7 @@ data/
   manifests/
 ```
 
-Use `slurm/compile_corpus.slurm` for the full source compile, `slurm/train_tokenizer.slurm` for tokenizer training, and `slurm/pretokenize.slurm` for token shard creation.
+Use `slurm/compile_corpus.sh` for the full source compile, `slurm/train_tokenizer.sh` for tokenizer training, and `slurm/pretokenize.sh` for token shard creation.
 
 ## Do Not Use Blindly
 

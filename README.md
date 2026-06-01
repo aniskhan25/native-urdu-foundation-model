@@ -118,9 +118,9 @@ The local `data/` directory is for pilots only. Full corpus compilation should w
 Suggested LUMI flow:
 
 ```bash
-sbatch slurm/compile_corpus.slurm
-sbatch slurm/train_tokenizer.slurm
-sbatch slurm/pretokenize.slurm
+sbatch slurm/compile_corpus.sh
+sbatch slurm/train_tokenizer.sh
+sbatch slurm/pretokenize.sh
 ```
 
 Current Slurm defaults are:

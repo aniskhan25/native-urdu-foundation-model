@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.metadata
 import importlib.util
 import json
+import os
 import sys
 from dataclasses import dataclass
 from typing import Optional
@@ -39,6 +40,7 @@ def package_version(package: str) -> Optional[str]:
 def main() -> int:
     results = []
     missing_required = []
+    require_gpu = os.environ.get("REQUIRE_GPU", "").lower() in {"1", "true", "yes"}
     for requirement in REQUIREMENTS:
         found = importlib.util.find_spec(requirement.module) is not None
         version = package_version(requirement.package)
@@ -68,6 +70,9 @@ def main() -> int:
     print(json.dumps({"requirements": results, "torch": torch_info}, indent=2))
     if missing_required:
         print("Missing required modules: " + ", ".join(missing_required), file=sys.stderr)
+        return 1
+    if require_gpu and int(torch_info.get("device_count") or 0) <= 0:
+        print("No ROCm devices visible to PyTorch.", file=sys.stderr)
         return 1
     print("Container has all required Python modules.")
     return 0

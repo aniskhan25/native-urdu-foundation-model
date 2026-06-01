@@ -10,26 +10,26 @@
 
 set -euo pipefail
 
-module use /appl/local/csc/modulefiles/
+module purge
+module use /appl/local/laifs/modules
+module load lumi-aif-singularity-bindings
 
 REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
 DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundation-data}"
 TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
 MANIFEST_ROOT="${MANIFEST_ROOT:-${DATA_ROOT}/manifests}"
-CONTAINER_IMAGE="${CONTAINER_IMAGE:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
-CONTAINER_BINDS="${CONTAINER_BINDS:-/pfs,/users,/projappl,/scratch,/project,/flash}"
+SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 
-if [ ! -f "${CONTAINER_IMAGE}" ]; then
-  echo "Missing container image: ${CONTAINER_IMAGE}" >&2
+if [ ! -f "${SIF}" ]; then
+  echo "Missing container image: ${SIF}" >&2
   exit 1
 fi
 
 mkdir -p "${MANIFEST_ROOT}"
 cd "${REPO_DIR}"
 
-singularity exec \
-  --bind="${CONTAINER_BINDS}" \
-  "${CONTAINER_IMAGE}" \
+singularity run \
+  "${SIF}" \
   python -m data_pipeline.build_training_manifest \
   --output "${MANIFEST_ROOT}/dress_rehearsal_manifest.json" \
   "${TOKENIZED_ROOT}/fineweb2_urd_arab.json" \

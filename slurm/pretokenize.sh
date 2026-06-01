@@ -9,7 +9,9 @@
 
 set -euo pipefail
 
-module use /appl/local/csc/modulefiles/
+module purge
+module use /appl/local/laifs/modules
+module load lumi-aif-singularity-bindings
 
 PROJECT_ID="project_462000131"
 USER_NAME="${USER:-anisrahm}"
@@ -18,20 +20,18 @@ DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundati
 COMPILED_DIR="${COMPILED_DIR:-${DATA_ROOT}/compiled}"
 TOKENIZER_MODEL="${TOKENIZER_MODEL:-${DATA_ROOT}/tokenizer/urdu_bpe_32k.model}"
 TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
-CONTAINER_IMAGE="${CONTAINER_IMAGE:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
-CONTAINER_BINDS="${CONTAINER_BINDS:-/pfs,/users,/projappl,/scratch,/project,/flash}"
+SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 
 mkdir -p "${TOKENIZED_ROOT}"
 cd "${REPO_DIR}"
 
-if [ ! -f "${CONTAINER_IMAGE}" ]; then
-  echo "Missing container image: ${CONTAINER_IMAGE}" >&2
+if [ ! -f "${SIF}" ]; then
+  echo "Missing container image: ${SIF}" >&2
   exit 1
 fi
 
-singularity exec \
-  --bind="${CONTAINER_BINDS}" \
-  "${CONTAINER_IMAGE}" \
+singularity run \
+  "${SIF}" \
   python data_pipeline/tokenize_shards.py \
   --input "${COMPILED_DIR}/fineweb2_urd_arab.jsonl" \
   --output-prefix "${TOKENIZED_ROOT}/fineweb2_urd_arab" \
@@ -39,9 +39,8 @@ singularity exec \
   --text-key normalized_text \
   --shard-tokens 134217728
 
-singularity exec \
-  --bind="${CONTAINER_BINDS}" \
-  "${CONTAINER_IMAGE}" \
+singularity run \
+  "${SIF}" \
   python data_pipeline/tokenize_shards.py \
   --input "${COMPILED_DIR}/makhzan_urdu.jsonl" \
   --output-prefix "${TOKENIZED_ROOT}/makhzan_urdu" \

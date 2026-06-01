@@ -120,6 +120,7 @@ Suggested LUMI flow:
 ```bash
 export HF_TOKEN="hf_..."
 sbatch slurm/check_container_requirements.sh
+sbatch slurm/check_gpu_container.sh
 sbatch --export=ALL slurm/compile_corpus.sh
 sbatch slurm/train_tokenizer.sh
 sbatch slurm/pretokenize.sh
@@ -144,10 +145,10 @@ Current Slurm defaults are:
 ```text
 REPO_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-model
 DATA_ROOT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data
-CONTAINER_IMAGE=/appl/local/laifs/containers/lumi-multitorch-latest.sif
+SIF=/appl/local/laifs/containers/lumi-multitorch-latest.sif
 ```
 
-The LUMI Slurm jobs run inside `CONTAINER_IMAGE` directly, so they use the PyTorch/ROCm environment from the LUMI container instead of a separate venv. Run `slurm/check_container_requirements.sh` first; if it reports all modules present, the current container does not need to be extended for this repository.
+The LUMI Slurm jobs follow the official LUMI AI Guide multi-GPU pattern: `module purge`, load `lumi-aif-singularity-bindings`, run the LAIF SIF with `singularity run`, set a Slurm-job-derived `MASTER_PORT`, and launch distributed training with `python -m torch.distributed.run --numa-binding=exclusive`. Run `slurm/check_container_requirements.sh` first for Python packages and `slurm/check_gpu_container.sh` before training to verify MI250X visibility.
 
 Prepare the current 685M-token dress rehearsal manifest:
 

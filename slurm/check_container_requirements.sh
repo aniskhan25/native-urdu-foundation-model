@@ -10,18 +10,20 @@
 
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
-CONTAINER_IMAGE="${CONTAINER_IMAGE:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
-CONTAINER_BINDS="${CONTAINER_BINDS:-/pfs,/users,/projappl,/scratch,/project,/flash}"
+module purge
+module use /appl/local/laifs/modules
+module load lumi-aif-singularity-bindings
 
-if [ ! -f "${CONTAINER_IMAGE}" ]; then
-  echo "Missing container image: ${CONTAINER_IMAGE}" >&2
+REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
+SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
+
+if [ ! -f "${SIF}" ]; then
+  echo "Missing container image: ${SIF}" >&2
   exit 1
 fi
 
 cd "${REPO_DIR}"
 
-singularity exec \
-  --bind="${CONTAINER_BINDS}" \
-  "${CONTAINER_IMAGE}" \
+singularity run \
+  "${SIF}" \
   python scripts/check_container_requirements.py

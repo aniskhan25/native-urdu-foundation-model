@@ -10,7 +10,9 @@
 
 set -euo pipefail
 
-module use /appl/local/csc/modulefiles/
+module purge
+module use /appl/local/laifs/modules
+module load lumi-aif-singularity-bindings
 
 PROJECT_ID="project_462000131"
 USER_NAME="${USER:-anisrahm}"
@@ -19,8 +21,7 @@ DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundati
 HF_HOME="${HF_HOME:-${DATA_ROOT}/hf_cache}"
 HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-${HF_HOME}/datasets}"
 OUTPUT_DIR="${OUTPUT_DIR:-${DATA_ROOT}/compiled}"
-CONTAINER_IMAGE="${CONTAINER_IMAGE:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
-CONTAINER_BINDS="${CONTAINER_BINDS:-/pfs,/users,/projappl,/scratch,/project,/flash}"
+SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 
 export HF_HOME
 export HF_DATASETS_CACHE
@@ -32,14 +33,13 @@ export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK}"
 mkdir -p "${OUTPUT_DIR}" "${HF_DATASETS_CACHE}"
 cd "${REPO_DIR}"
 
-if [ ! -f "${CONTAINER_IMAGE}" ]; then
-  echo "Missing container image: ${CONTAINER_IMAGE}" >&2
+if [ ! -f "${SIF}" ]; then
+  echo "Missing container image: ${SIF}" >&2
   exit 1
 fi
 
-singularity exec \
-  --bind="${CONTAINER_BINDS}" \
-  "${CONTAINER_IMAGE}" \
+singularity run \
+  "${SIF}" \
   python -m data_pipeline.compile_corpus \
   --source fineweb2_urd_arab \
   --source makhzan_urdu \
@@ -48,7 +48,6 @@ singularity exec \
   --output-dir "${OUTPUT_DIR}" \
   --force-exit
 
-singularity exec \
-  --bind="${CONTAINER_BINDS}" \
-  "${CONTAINER_IMAGE}" \
+singularity run \
+  "${SIF}" \
   python -m data_pipeline.summarize_corpus "${OUTPUT_DIR}"/*.jsonl > "${OUTPUT_DIR}/summary.json"

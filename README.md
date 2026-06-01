@@ -19,7 +19,7 @@ docs/                    Data/model/normalization documentation
 eval/                    Evaluation placeholders and contamination checks
 slurm/                   LUMI Slurm job templates
 tokenizer/               SentencePiece BPE tokenizer training
-training/                Training placeholders and model configs
+training/                Minimal decoder model, shard sampler, and FSDP training entrypoint
 tests/                   Unit tests for core pipeline behavior
 ```
 
@@ -156,4 +156,18 @@ sbatch slurm/build_manifest.sh
 sbatch slurm/preflight_dress_rehearsal.sh
 ```
 
-The dress rehearsal config is `configs/urdu_dress_rehearsal.yaml`. It points at the current tokenized FineWeb2 and Maḵẖzan shards and uses a smaller 350M-parameter model target for pipeline validation. The actual distributed training loop is still the next implementation step before `slurm/train_dress_rehearsal.sh` can run end to end.
+The dress rehearsal config is `configs/urdu_dress_rehearsal.yaml`. It points at the current tokenized FineWeb2 and Maḵẖzan shards and uses a smaller 350M-parameter model target for pipeline validation.
+
+For a minimal GPU smoke test before a full rehearsal:
+
+```bash
+MAX_STEPS=2 sbatch slurm/train_dress_rehearsal.sh
+```
+
+If the smoke test completes, submit the configured rehearsal:
+
+```bash
+sbatch slurm/train_dress_rehearsal.sh
+```
+
+Training checkpoints are written under the config `infrastructure.output_dir`, with `latest.json` pointing at the most recent checkpoint.

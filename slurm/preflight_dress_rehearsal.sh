@@ -27,5 +27,4 @@ fi
 cd "${REPO_DIR}"
 source "${VENV_DIR}/bin/activate"
 
-python training/train.py --config "${CONFIG}" --preflight
-
+python -m training.train --config "${CONFIG}" --preflight

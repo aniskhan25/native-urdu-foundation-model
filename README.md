@@ -121,9 +121,22 @@ Suggested LUMI flow:
 module use /appl/local/csc/modulefiles/
 module load cray-python
 ./scripts/install_venv.sh
-sbatch slurm/compile_corpus.sh
+export HF_TOKEN="hf_..."
+sbatch --export=ALL slurm/compile_corpus.sh
 sbatch slurm/train_tokenizer.sh
 sbatch slurm/pretokenize.sh
+```
+
+Do not commit the Hugging Face token or add it to the Slurm scripts. For repeated use, keep it in a private file and source it before submitting the corpus job:
+
+```bash
+mkdir -p ~/.config/huggingface
+chmod 700 ~/.config/huggingface
+printf '%s\n' 'export HF_TOKEN="hf_..."' > ~/.config/huggingface/token.env
+chmod 600 ~/.config/huggingface/token.env
+
+source ~/.config/huggingface/token.env
+sbatch --export=ALL slurm/compile_corpus.sh
 ```
 
 Current Slurm defaults are:

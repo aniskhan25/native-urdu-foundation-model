@@ -125,6 +125,8 @@ export HF_TOKEN="hf_..."
 sbatch --export=ALL slurm/compile_corpus.sh
 sbatch slurm/train_tokenizer.sh
 sbatch slurm/pretokenize.sh
+sbatch slurm/build_manifest.sh
+sbatch slurm/preflight_dress_rehearsal.sh
 ```
 
 Do not commit the Hugging Face token or add it to the Slurm scripts. For repeated use, keep it in a private file and source it before submitting the corpus job:
@@ -146,3 +148,12 @@ REPO_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-model
 DATA_ROOT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data
 VENV_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/venv
 ```
+
+Prepare the current 685M-token dress rehearsal manifest:
+
+```bash
+sbatch slurm/build_manifest.sh
+sbatch slurm/preflight_dress_rehearsal.sh
+```
+
+The dress rehearsal config is `configs/urdu_dress_rehearsal.yaml`. It points at the current tokenized FineWeb2 and Maḵẖzan shards and uses a smaller 350M-parameter model target for pipeline validation. The actual distributed training loop is still the next implementation step before `slurm/train_dress_rehearsal.sh` can run end to end.

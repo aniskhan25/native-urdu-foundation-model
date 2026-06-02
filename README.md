@@ -165,10 +165,16 @@ For a minimal GPU smoke test before a full rehearsal:
 MAX_STEPS=2 sbatch slurm/train_dress_rehearsal.sh
 ```
 
+Resume from the most recent checkpoint:
+
+```bash
+RESUME=latest sbatch slurm/train_dress_rehearsal.sh
+```
+
 If the smoke test completes, submit the configured rehearsal:
 
 ```bash
 sbatch slurm/train_dress_rehearsal.sh
 ```
 
-Training checkpoints are written under the config `infrastructure.output_dir`, with `latest.json` pointing at the most recent checkpoint.
+Training checkpoints are written under the config `infrastructure.output_dir`, with `latest.json` pointing at the most recent checkpoint. Checkpoints include model and optimizer state, and old `step_*.pt` files are pruned according to `training.keep_last_checkpoints`.

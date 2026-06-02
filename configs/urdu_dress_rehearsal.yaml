@@ -46,6 +46,9 @@ training:
   grad_clip: 1.0
   activation_checkpointing: true
   checkpoint_interval_tokens: 50000000
+  keep_last_checkpoints: 3
+  validation_interval_tokens: 50000000
+  validation_batches_per_source: 2
 infrastructure:
   platform: LUMI-G
   backend: pytorch_rocm_rccl
@@ -53,4 +56,3 @@ infrastructure:
   nodes: 4
   logical_gpus_per_node: 8
   output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/dress_rehearsal
-

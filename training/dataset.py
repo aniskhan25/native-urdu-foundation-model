@@ -7,8 +7,6 @@ import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
-
 import numpy as np
 
 
@@ -22,6 +20,7 @@ class TokenShard:
 @dataclass
 class TokenSource:
     name: str
+    bucket: str
     weight: float
     shards: list[TokenShard]
     cumulative_tokens: list[int]
@@ -47,6 +46,7 @@ class RandomTokenSampler:
         sources = []
         for source in manifest["sources"]:
             name = source["source"]
+            bucket = source.get("bucket", name)
             weight = float(source_weights.get(name, 0.0))
             if weight <= 0:
                 continue
@@ -63,10 +63,13 @@ class RandomTokenSampler:
             for shard in shards:
                 running += shard.tokens
                 cumulative.append(running)
-            sources.append(TokenSource(name=name, weight=weight, shards=shards, cumulative_tokens=cumulative))
+            sources.append(TokenSource(name=name, bucket=bucket, weight=weight, shards=shards, cumulative_tokens=cumulative))
         if not sources:
             raise ValueError(f"No trainable sources in manifest: {manifest_path}")
         return sources
+
+    def source_buckets(self) -> dict[str, str]:
+        return {source.name: source.bucket for source in self.sources}
 
     def _array(self, shard: TokenShard) -> np.memmap:
         if shard.path not in self._arrays:
@@ -93,4 +96,3 @@ class RandomTokenSampler:
             windows.append(window)
             counts[source_name] += 1
         return np.stack(windows), counts
-

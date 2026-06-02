@@ -24,6 +24,9 @@ EXTRA_ARGS=()
 if [ -n "${MAX_STEPS:-}" ]; then
   EXTRA_ARGS=(--max-steps "${MAX_STEPS}")
 fi
+if [ -n "${RESUME:-}" ]; then
+  EXTRA_ARGS+=(--resume "${RESUME}")
+fi
 
 if [ ! -f "${SIF}" ]; then
   echo "Missing container image: ${SIF}" >&2

@@ -21,6 +21,7 @@ class RandomTokenSamplerTests(unittest.TestCase):
                         "sources": [
                             {
                                 "source": "source",
+                                "bucket": "urdu_web",
                                 "dtype": "uint16",
                                 "shards": [{"path": str(shard), "tokens": 32}],
                             }
@@ -36,6 +37,7 @@ class RandomTokenSamplerTests(unittest.TestCase):
             self.assertEqual(batch.shape, (4, 9))
             self.assertEqual(batch.dtype, np.int64)
             self.assertEqual(counts, {"source": 4})
+            self.assertEqual(sampler.source_buckets(), {"source": "urdu_web"})
 
     def test_ignores_zero_weight_sources(self):
         with tempfile.TemporaryDirectory() as tmp:

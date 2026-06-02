@@ -35,9 +35,11 @@ training:
   warmup_tokens: 75000000
   grad_clip: 1.0
   activation_checkpointing: true
+  checkpoint_interval_tokens: 250000000
+  keep_last_checkpoints: 3
+  validation_interval_tokens: 250000000
+  validation_batches_per_source: 2
 infrastructure:
   platform: LUMI-G
   backend: pytorch_rocm_rccl
   parallelism: fsdp_full_shard
-  checkpoint_interval_tokens: 250000000
-

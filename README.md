@@ -186,3 +186,32 @@ CONFIG=configs/urdu_700m_pilot.yaml sbatch slurm/preflight_dress_rehearsal.sh
 CONFIG=configs/urdu_700m_pilot.yaml MAX_STEPS=20 sbatch slurm/train_dress_rehearsal.sh
 CONFIG=configs/urdu_700m_pilot.yaml sbatch slurm/train_dress_rehearsal.sh
 ```
+
+## Corpus Expansion
+
+Compile the next FineWeb2 Urdu continuation shard while training runs. This skips the first 1M kept documents already used in the rehearsal and writes the next kept documents to a separate compiled directory:
+
+```bash
+export CORPUS_SOURCES="fineweb2_urd_arab_extra"
+export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/compiled_expansion_v1
+export SKIP_DOCS_PER_SOURCE=1000000
+export MAX_DOCS_PER_SOURCE=3000000
+export MAX_SCANNED_PER_SOURCE=6000000
+sbatch --export=ALL slurm/compile_corpus.sh
+```
+
+Tokenize the expansion shard with the frozen tokenizer:
+
+```bash
+export CORPUS_SOURCES="fineweb2_urd_arab_extra"
+export COMPILED_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/compiled_expansion_v1
+sbatch --export=ALL slurm/pretokenize.sh
+```
+
+Build an expanded manifest that combines the original rehearsal shards and the new continuation shard:
+
+```bash
+export CORPUS_SOURCES="fineweb2_urd_arab makhzan_urdu fineweb2_urd_arab_extra"
+export MANIFEST_NAME=expanded_v1_manifest.json
+sbatch --export=ALL slurm/build_manifest.sh
+```

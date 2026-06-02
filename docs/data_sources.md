@@ -73,6 +73,7 @@ Local pilot compilation has been validated for:
 | Source | Status | Notes |
 |---|---|---|
 | FineWeb2 `urd_Arab` | working | 100-document pilot compiled to `data/compiled/fineweb2_urd_arab.jsonl` |
+| FineWeb2 `urd_Arab` continuation | ready | Use `fineweb2_urd_arab_extra` with `SKIP_DOCS_PER_SOURCE=1000000` to avoid duplicating the rehearsal shard |
 | Maḵẖzan Urdu | working | 100-document pilot compiled to `data/compiled/makhzan_urdu.jsonl`; loader uses longest-string fallback |
 | HPLT Urdu | deferred | HF dataset script currently fails in streaming mode by resolving a remote map URL as a local path |
 

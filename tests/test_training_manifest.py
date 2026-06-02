@@ -6,6 +6,7 @@ from io import StringIO
 from pathlib import Path
 
 from data_pipeline.build_training_manifest import build_manifest
+from data_pipeline.build_training_manifest import bucket_for_source
 
 
 class TrainingManifestTests(unittest.TestCase):
@@ -37,6 +38,11 @@ class TrainingManifestTests(unittest.TestCase):
             self.assertEqual(manifest["total_docs"], 3)
             self.assertEqual(manifest["sources"][0]["source"], "fineweb2_urd_arab")
             self.assertEqual(manifest["sources"][0]["bucket"], "urdu_web")
+
+    def test_bucket_mapping_for_expansion_sources(self):
+        self.assertEqual(bucket_for_source("fineweb2_urd_arab_extra"), "urdu_web")
+        self.assertEqual(bucket_for_source("mc4_ur"), "urdu_web")
+        self.assertEqual(bucket_for_source("wikimedia_wikisource_ur"), "urdu_literature")
 
 
 if __name__ == "__main__":

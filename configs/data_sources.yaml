@@ -37,6 +37,18 @@ selected_sources:
           timestamp: date
           source_id: id
         notes: Primary web-scale Urdu source. Run local Urdu normalization, LID, quality filtering, and cross-source dedup.
+      - id: fineweb2_urd_arab_extra
+        name: FineWeb2 Urdu Arab continuation
+        url: https://huggingface.co/datasets/HuggingFaceFW/fineweb-2
+        license: ODC-By-1.0 plus CommonCrawl terms
+        priority: primary_continuation
+        target_share_within_bucket: 0.60
+        fields:
+          text: text
+          url: url
+          timestamp: date
+          source_id: id
+        notes: Continuation source for compiling FineWeb2 after the first rehearsal shard. Use skip_docs_per_source to avoid duplicating the first kept documents.
       - id: hplt_ur_cleaned
         name: HPLT Urdu cleaned/deduplicated
         url: https://huggingface.co/datasets/HPLT/hplt_monolingual_v1_2

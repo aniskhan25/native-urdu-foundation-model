@@ -21,6 +21,7 @@ COMPILED_DIR="${COMPILED_DIR:-${DATA_ROOT}/compiled}"
 TOKENIZER_MODEL="${TOKENIZER_MODEL:-${DATA_ROOT}/tokenizer/urdu_bpe_32k.model}"
 TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
+CORPUS_SOURCES="${CORPUS_SOURCES:-fineweb2_urd_arab makhzan_urdu}"
 
 mkdir -p "${TOKENIZED_ROOT}"
 cd "${REPO_DIR}"
@@ -30,20 +31,14 @@ if [ ! -f "${SIF}" ]; then
   exit 1
 fi
 
-singularity run \
-  "${SIF}" \
-  python data_pipeline/tokenize_shards.py \
-  --input "${COMPILED_DIR}/fineweb2_urd_arab.jsonl" \
-  --output-prefix "${TOKENIZED_ROOT}/fineweb2_urd_arab" \
-  --model "${TOKENIZER_MODEL}" \
-  --text-key normalized_text \
-  --shard-tokens 134217728
-
-singularity run \
-  "${SIF}" \
-  python data_pipeline/tokenize_shards.py \
-  --input "${COMPILED_DIR}/makhzan_urdu.jsonl" \
-  --output-prefix "${TOKENIZED_ROOT}/makhzan_urdu" \
-  --model "${TOKENIZER_MODEL}" \
-  --text-key normalized_text \
-  --shard-tokens 134217728
+read -r -a SOURCES <<< "${CORPUS_SOURCES}"
+for SOURCE in "${SOURCES[@]}"; do
+  singularity run \
+    "${SIF}" \
+    python data_pipeline/tokenize_shards.py \
+    --input "${COMPILED_DIR}/${SOURCE}.jsonl" \
+    --output-prefix "${TOKENIZED_ROOT}/${SOURCE}" \
+    --model "${TOKENIZER_MODEL}" \
+    --text-key normalized_text \
+    --shard-tokens 134217728
+done

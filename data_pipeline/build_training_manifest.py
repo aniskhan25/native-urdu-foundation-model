@@ -21,9 +21,9 @@ def source_from_metadata_path(path: Path) -> str:
 
 
 def bucket_for_source(source: str) -> str:
-    if source == "makhzan_urdu":
+    if source == "makhzan_urdu" or source.startswith("wikimedia_wikisource"):
         return "urdu_literature"
-    if source == "fineweb2_urd_arab":
+    if source.startswith("fineweb2_") or source.startswith("hplt_") or source.startswith("mc4_"):
         return "urdu_web"
     return "unknown"
 
@@ -74,4 +74,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

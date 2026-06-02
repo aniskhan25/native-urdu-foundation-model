@@ -19,6 +19,8 @@ DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundati
 TOKENIZED_ROOT="${TOKENIZED_ROOT:-${DATA_ROOT}/tokenized}"
 MANIFEST_ROOT="${MANIFEST_ROOT:-${DATA_ROOT}/manifests}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
+CORPUS_SOURCES="${CORPUS_SOURCES:-fineweb2_urd_arab makhzan_urdu}"
+MANIFEST_NAME="${MANIFEST_NAME:-dress_rehearsal_manifest.json}"
 
 if [ ! -f "${SIF}" ]; then
   echo "Missing container image: ${SIF}" >&2
@@ -28,9 +30,14 @@ fi
 mkdir -p "${MANIFEST_ROOT}"
 cd "${REPO_DIR}"
 
+read -r -a SOURCES <<< "${CORPUS_SOURCES}"
+METADATA_PATHS=()
+for SOURCE in "${SOURCES[@]}"; do
+  METADATA_PATHS+=("${TOKENIZED_ROOT}/${SOURCE}.json")
+done
+
 singularity run \
   "${SIF}" \
   python -m data_pipeline.build_training_manifest \
-  --output "${MANIFEST_ROOT}/dress_rehearsal_manifest.json" \
-  "${TOKENIZED_ROOT}/fineweb2_urd_arab.json" \
-  "${TOKENIZED_ROOT}/makhzan_urdu.json"
+  --output "${MANIFEST_ROOT}/${MANIFEST_NAME}" \
+  "${METADATA_PATHS[@]}"

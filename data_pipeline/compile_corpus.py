@@ -50,6 +50,15 @@ SOURCE_LOADERS: dict[str, dict[str, Any]] = {
         "url_fields": ["url", "source_url"],
         "timestamp_fields": ["date", "timestamp", "crawl_date"],
     },
+    "fineweb2_urd_arab_extra": {
+        "bucket": "urdu_web",
+        "hf_dataset": "HuggingFaceFW/fineweb-2",
+        "hf_config": "urd_Arab",
+        "split": "train",
+        "text_fields": ["text"],
+        "url_fields": ["url", "source_url"],
+        "timestamp_fields": ["date", "timestamp", "crawl_date"],
+    },
     "hplt_ur_cleaned": {
         "bucket": "urdu_web",
         "hf_dataset": "HPLT/hplt_monolingual_v1_2",
@@ -224,6 +233,7 @@ def compile_source(
     output_dir: Path,
     max_docs: int | None,
     max_scanned: int | None,
+    skip_docs: int,
     min_chars: int,
     min_script_ratio: float,
     max_repeated_char_ratio: float,
@@ -238,6 +248,7 @@ def compile_source(
     output_path = output_dir / f"{source_id}.jsonl"
     seen_hashes: set[str] = set()
     seen = 0
+    skipped_kept = 0
     kept = 0
     duplicates = 0
     filtered = 0
@@ -264,9 +275,12 @@ def compile_source(
                 duplicates += 1
             else:
                 seen_hashes.add(canonical["dedup_hash"])
-                out.write(json.dumps(canonical, ensure_ascii=False) + "\n")
-                kept += 1
-                progress.set_postfix(kept=kept, filtered=filtered, duplicates=duplicates)
+                if skipped_kept < skip_docs:
+                    skipped_kept += 1
+                else:
+                    out.write(json.dumps(canonical, ensure_ascii=False) + "\n")
+                    kept += 1
+                progress.set_postfix(kept=kept, skipped=skipped_kept, filtered=filtered, duplicates=duplicates)
 
             if max_docs is not None and kept >= max_docs:
                 break
@@ -277,6 +291,7 @@ def compile_source(
         "source_id": source_id,
         "output_path": str(output_path),
         "seen": seen,
+        "skipped_kept": skipped_kept,
         "kept": kept,
         "filtered": filtered,
         "duplicates": duplicates,
@@ -294,6 +309,12 @@ def main() -> None:
         help="Source id to compile. May be repeated. Defaults to the web pilot source.",
     )
     parser.add_argument("--max-docs-per-source", type=int, default=1000)
+    parser.add_argument(
+        "--skip-docs-per-source",
+        type=int,
+        default=0,
+        help="Skip this many kept-quality documents before writing output. Useful for continuation shards.",
+    )
     parser.add_argument(
         "--max-scanned-per-source",
         type=int,
@@ -322,6 +343,7 @@ def main() -> None:
                 output_dir=args.output_dir,
                 max_docs=args.max_docs_per_source,
                 max_scanned=args.max_scanned_per_source,
+                skip_docs=args.skip_docs_per_source,
                 min_chars=args.min_chars,
                 min_script_ratio=args.min_script_ratio,
                 max_repeated_char_ratio=args.max_repeated_char_ratio,

@@ -22,6 +22,7 @@ HF_HOME="${HF_HOME:-${DATA_ROOT}/hf_cache}"
 HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-${HF_HOME}/datasets}"
 OUTPUT_DIR="${OUTPUT_DIR:-${DATA_ROOT}/compiled}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
+CORPUS_SOURCES="${CORPUS_SOURCES:-fineweb2_urd_arab makhzan_urdu}"
 
 export HF_HOME
 export HF_DATASETS_CACHE
@@ -38,12 +39,18 @@ if [ ! -f "${SIF}" ]; then
   exit 1
 fi
 
+read -r -a SOURCES <<< "${CORPUS_SOURCES}"
+SOURCE_ARGS=()
+for SOURCE in "${SOURCES[@]}"; do
+  SOURCE_ARGS+=(--source "${SOURCE}")
+done
+
 singularity run \
   "${SIF}" \
   python -m data_pipeline.compile_corpus \
-  --source fineweb2_urd_arab \
-  --source makhzan_urdu \
+  "${SOURCE_ARGS[@]}" \
   --max-docs-per-source "${MAX_DOCS_PER_SOURCE:-1000000}" \
+  --skip-docs-per-source "${SKIP_DOCS_PER_SOURCE:-0}" \
   --max-scanned-per-source "${MAX_SCANNED_PER_SOURCE:-1500000}" \
   --output-dir "${OUTPUT_DIR}" \
   --force-exit

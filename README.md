@@ -178,3 +178,11 @@ sbatch slurm/train_dress_rehearsal.sh
 ```
 
 Training checkpoints are written under the config `infrastructure.output_dir`, with `latest.json` pointing at the most recent checkpoint. Checkpoints include model and optimizer state, and old `step_*.pt` files are pruned according to `training.keep_last_checkpoints`.
+
+Run the 700M pilot on the current 685M-token corpus:
+
+```bash
+CONFIG=configs/urdu_700m_pilot.yaml sbatch slurm/preflight_dress_rehearsal.sh
+CONFIG=configs/urdu_700m_pilot.yaml MAX_STEPS=20 sbatch slurm/train_dress_rehearsal.sh
+CONFIG=configs/urdu_700m_pilot.yaml sbatch slurm/train_dress_rehearsal.sh
+```

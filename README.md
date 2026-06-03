@@ -229,3 +229,11 @@ Resume the expanded run:
 ```bash
 CONFIG=configs/urdu_700m_expanded_v1.yaml RESUME=latest sbatch slurm/train_dress_rehearsal.sh
 ```
+
+Generate qualitative Urdu samples from the latest checkpoint:
+
+```bash
+CONFIG=configs/urdu_700m_expanded_v1.yaml sbatch slurm/generate_samples.sh
+```
+
+The default prompt set is `eval/prompts_urdu.txt`; samples are written to `samples.jsonl` in the run output directory.

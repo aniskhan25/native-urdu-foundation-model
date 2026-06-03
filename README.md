@@ -215,3 +215,17 @@ export CORPUS_SOURCES="fineweb2_urd_arab makhzan_urdu fineweb2_urd_arab_extra"
 export MANIFEST_NAME=expanded_v1_manifest.json
 sbatch --export=ALL slurm/build_manifest.sh
 ```
+
+Train the 700M model on expanded v1:
+
+```bash
+CONFIG=configs/urdu_700m_expanded_v1.yaml sbatch slurm/preflight_dress_rehearsal.sh
+CONFIG=configs/urdu_700m_expanded_v1.yaml MAX_STEPS=20 sbatch slurm/train_dress_rehearsal.sh
+CONFIG=configs/urdu_700m_expanded_v1.yaml sbatch slurm/train_dress_rehearsal.sh
+```
+
+Resume the expanded run:
+
+```bash
+CONFIG=configs/urdu_700m_expanded_v1.yaml RESUME=latest sbatch slurm/train_dress_rehearsal.sh
+```

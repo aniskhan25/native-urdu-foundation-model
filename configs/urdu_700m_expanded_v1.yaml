@@ -1,0 +1,60 @@
+project: native_urdu_foundation_model
+run_name: expanded_v1_700m_2_43b_tokens
+target_tokens: 2434183659
+tokenizer:
+  path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.model
+  vocab_size: 32000
+  normalization: custom_urdu_nfkc_then_nfc_v1
+data:
+  manifest: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/expanded_v1_manifest.json
+  tokenized_root: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenized
+  sequence_length: 4096
+  validation_fraction: 0.002
+  source_weights:
+    fineweb2_urd_arab: 0.28
+    fineweb2_urd_arab_extra: 0.67
+    makhzan_urdu: 0.05
+  notes: >
+    Expanded v1 combines the original 685M-token rehearsal corpus with a
+    3M-document FineWeb2 continuation shard. Literature remains deliberately
+    upweighted relative to raw token availability, but not enough to cause
+    heavy repetition.
+model:
+  architecture: decoder_only_llama_style
+  params: 700000000
+  hidden_size: 1536
+  layers: 24
+  attention_heads: 16
+  kv_heads: 16
+  intermediate_size: 4096
+  seq_len: 4096
+  activation: swiglu
+  norm: rmsnorm
+  position_embedding: rope
+  rope_theta: 10000
+  tie_embeddings: true
+training:
+  precision: bf16
+  optimizer: adamw
+  lr: 0.00035
+  min_lr_ratio: 0.1
+  weight_decay: 0.1
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-8
+  global_batch_tokens: 1048576
+  estimated_steps: 2321
+  warmup_tokens: 50000000
+  grad_clip: 1.0
+  activation_checkpointing: true
+  checkpoint_interval_tokens: 100000000
+  keep_last_checkpoints: 3
+  validation_interval_tokens: 100000000
+  validation_batches_per_source: 2
+infrastructure:
+  platform: LUMI-G
+  backend: pytorch_rocm_rccl
+  parallelism: fsdp_full_shard
+  nodes: 4
+  logical_gpus_per_node: 8
+  output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_expanded_v1

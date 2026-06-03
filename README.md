@@ -237,3 +237,11 @@ CONFIG=configs/urdu_700m_expanded_v1.yaml sbatch slurm/generate_samples.sh
 ```
 
 The default prompt set is `eval/prompts_urdu.txt`; samples are written to `samples.jsonl` in the run output directory.
+
+Score generated samples for repetition, web artifacts, boilerplate, Urdu ratio, prompt copying, and simple math:
+
+```bash
+RUN_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_expanded_v1 sbatch slurm/score_samples.sh
+```
+
+This writes `samples.scores.jsonl` and `samples.summary.json` next to `samples.jsonl`.

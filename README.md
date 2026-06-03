@@ -140,6 +140,22 @@ source ~/.config/huggingface/token.env
 sbatch --export=ALL slurm/compile_corpus.sh
 ```
 
+For a stricter cleanup compile, lower the artifact thresholds:
+
+```bash
+export CORPUS_SOURCES="fineweb2_urd_arab_extra"
+export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/compiled_clean_v1
+export SKIP_DOCS_PER_SOURCE=4000000
+export MAX_DOCS_PER_SOURCE=1000000
+export MAX_SCANNED_PER_SOURCE=3000000
+export MAX_REPEATED_4GRAM_RATIO=0.04
+export MAX_REPEATED_6GRAM_RATIO=0.02
+export MAX_LONGEST_REPEATED_NGRAM=6
+export MAX_URL_HITS=1
+export MAX_BOILERPLATE_HITS=0
+sbatch --export=ALL slurm/compile_corpus.sh
+```
+
 Current Slurm defaults are:
 
 ```text

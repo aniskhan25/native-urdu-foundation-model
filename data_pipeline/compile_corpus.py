@@ -187,7 +187,12 @@ def canonicalize_record(
     min_chars: int,
     min_script_ratio: float,
     max_repeated_char_ratio: float,
+    max_repeated_4gram_ratio: float,
+    max_repeated_6gram_ratio: float,
+    max_longest_repeated_ngram: int,
     max_symbol_ratio: float,
+    max_url_hits: int,
+    max_boilerplate_hits: int,
 ) -> dict[str, Any] | None:
     if not record_language_allowed(raw_record, loader):
         return None
@@ -203,7 +208,12 @@ def canonicalize_record(
         min_chars=min_chars,
         min_script_ratio=min_script_ratio,
         max_repeated_char_ratio=max_repeated_char_ratio,
+        max_repeated_4gram_ratio=max_repeated_4gram_ratio,
+        max_repeated_6gram_ratio=max_repeated_6gram_ratio,
+        max_longest_repeated_ngram=max_longest_repeated_ngram,
         max_symbol_ratio=max_symbol_ratio,
+        max_url_hits=max_url_hits,
+        max_boilerplate_hits=max_boilerplate_hits,
     ):
         return None
 
@@ -237,7 +247,12 @@ def compile_source(
     min_chars: int,
     min_script_ratio: float,
     max_repeated_char_ratio: float,
+    max_repeated_4gram_ratio: float,
+    max_repeated_6gram_ratio: float,
+    max_longest_repeated_ngram: int,
     max_symbol_ratio: float,
+    max_url_hits: int,
+    max_boilerplate_hits: int,
 ) -> dict[str, Any]:
     if source_id not in SOURCE_LOADERS:
         raise KeyError(f"No loader is implemented for source {source_id!r}")
@@ -267,7 +282,12 @@ def compile_source(
                 min_chars=min_chars,
                 min_script_ratio=min_script_ratio,
                 max_repeated_char_ratio=max_repeated_char_ratio,
+                max_repeated_4gram_ratio=max_repeated_4gram_ratio,
+                max_repeated_6gram_ratio=max_repeated_6gram_ratio,
+                max_longest_repeated_ngram=max_longest_repeated_ngram,
                 max_symbol_ratio=max_symbol_ratio,
+                max_url_hits=max_url_hits,
+                max_boilerplate_hits=max_boilerplate_hits,
             )
             if canonical is None:
                 filtered += 1
@@ -324,7 +344,12 @@ def main() -> None:
     parser.add_argument("--min-chars", type=int, default=200)
     parser.add_argument("--min-script-ratio", type=float, default=0.65)
     parser.add_argument("--max-repeated-char-ratio", type=float, default=0.20)
+    parser.add_argument("--max-repeated-4gram-ratio", type=float, default=0.08)
+    parser.add_argument("--max-repeated-6gram-ratio", type=float, default=0.04)
+    parser.add_argument("--max-longest-repeated-ngram", type=int, default=8)
     parser.add_argument("--max-symbol-ratio", type=float, default=0.15)
+    parser.add_argument("--max-url-hits", type=int, default=3)
+    parser.add_argument("--max-boilerplate-hits", type=int, default=2)
     parser.add_argument(
         "--force-exit",
         action="store_true",
@@ -347,7 +372,12 @@ def main() -> None:
                 min_chars=args.min_chars,
                 min_script_ratio=args.min_script_ratio,
                 max_repeated_char_ratio=args.max_repeated_char_ratio,
+                max_repeated_4gram_ratio=args.max_repeated_4gram_ratio,
+                max_repeated_6gram_ratio=args.max_repeated_6gram_ratio,
+                max_longest_repeated_ngram=args.max_longest_repeated_ngram,
                 max_symbol_ratio=args.max_symbol_ratio,
+                max_url_hits=args.max_url_hits,
+                max_boilerplate_hits=args.max_boilerplate_hits,
             )
         )
 

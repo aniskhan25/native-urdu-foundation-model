@@ -14,6 +14,7 @@ import yaml
 
 from training.dataset import RandomTokenSampler
 from training.model import DecoderBlock, LlamaDecoder, parameter_count
+from training.progress import resume_progress
 
 
 def load_config(path: Path) -> dict:
@@ -310,6 +311,7 @@ def train(config: dict, *, max_steps_override: int | None = None, resume_overrid
     )
 
     model = LlamaDecoder(model_config, int(config["tokenizer"]["vocab_size"])).to(device)
+    total_parameters = parameter_count(model)
     use_fsdp = world_size > 1 and infra_config.get("parallelism") == "fsdp_full_shard"
     model = maybe_wrap_fsdp(model, enabled=use_fsdp, device=device)
     model.train()
@@ -326,14 +328,21 @@ def train(config: dict, *, max_steps_override: int | None = None, resume_overrid
     resume_path = resolve_resume_path(output_dir, resume_override or training_config.get("resume_from_checkpoint"))
     start_step = 0
     tokens_seen = 0
+    loaded_step = None
+    loaded_tokens = None
     if resume_path is not None:
-        start_step, tokens_seen = load_checkpoint_state(model, optimizer, resume_path, device)
+        loaded_step, loaded_tokens = load_checkpoint_state(model, optimizer, resume_path, device)
+        start_step, tokens_seen = resume_progress(
+            loaded_step,
+            loaded_tokens,
+            reset=bool(training_config.get("resume_reset_progress", False)),
+        )
         if dist.is_available() and dist.is_initialized():
             dist.barrier()
 
     if rank == 0:
         output_dir.mkdir(parents=True, exist_ok=True)
-        print(f"parameters={parameter_count(model):,}")
+        print(f"parameters={total_parameters:,}")
         print(f"world_size={world_size} per_rank_batch={per_rank_batch} actual_global_tokens={actual_global_tokens}")
         print(
             f"total_steps={total_steps} start_step={start_step} warmup_steps={warmup_steps} "
@@ -341,6 +350,8 @@ def train(config: dict, *, max_steps_override: int | None = None, resume_overrid
         )
         if resume_path is not None:
             print(f"resumed_from={resume_path}")
+            if loaded_step is not None and loaded_tokens is not None:
+                print(f"checkpoint_progress step={loaded_step} tokens={loaded_tokens}")
 
     peak_lr = float(training_config["lr"])
     min_lr = peak_lr * float(training_config.get("min_lr_ratio", 0.1))

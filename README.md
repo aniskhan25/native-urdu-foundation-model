@@ -254,10 +254,38 @@ CONFIG=configs/urdu_700m_expanded_v1.yaml sbatch slurm/generate_samples.sh
 
 The default prompt set is `eval/prompts_urdu.txt`; samples are written to `samples.jsonl` in the run output directory.
 
+Recommended decoding preset for base-model qualitative checks:
+
+```bash
+export CONFIG=configs/urdu_700m_clean_continue_v1.yaml
+export CHECKPOINT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/step_000432.pt
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/samples_t07_p085_r112_ng6_96.jsonl
+export MAX_NEW_TOKENS=96
+export TEMPERATURE=0.7
+export TOP_P=0.85
+export TOP_K=40
+export REPETITION_PENALTY=1.12
+export NO_REPEAT_NGRAM_SIZE=6
+
+sbatch --export=ALL slurm/generate_samples.sh
+```
+
+This preset was selected after the clean-continuation checkpoint removed URL/UI artifacts but still repeated under plain top-p sampling. The repetition penalty and 6-gram block are decoding controls for qualitative evaluation; they do not change the trained checkpoint.
+
 Score generated samples for repetition, web artifacts, boilerplate, Urdu ratio, prompt copying, and simple math:
 
 ```bash
 RUN_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_expanded_v1 sbatch slurm/score_samples.sh
+```
+
+Score an explicitly named sample file:
+
+```bash
+export INPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/samples_t07_p085_r112_ng6_96.jsonl
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/samples_t07_p085_r112_ng6_96.scores.jsonl
+export SUMMARY_OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/samples_t07_p085_r112_ng6_96.summary.json
+
+sbatch --export=ALL slurm/score_samples.sh
 ```
 
 This writes `samples.scores.jsonl` and `samples.summary.json` next to `samples.jsonl`.

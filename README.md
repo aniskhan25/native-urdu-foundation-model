@@ -317,6 +317,15 @@ Place the initial SFT split on LUMI scratch:
 /scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft/sft_val.jsonl
 ```
 
+Create the curated seed split:
+
+```bash
+python -m sft.prepare_seed_sft \
+  --output-dir /scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft
+```
+
+This seed set is only a starter for checking SFT behavior. It covers the observed base-model weak spots: repetition-prone Urdu prompts, simple math, summaries, grammar/style correction, code-switching, safety/uncertainty, and short creative writing.
+
 Run the SFT preflight, smoke test, and full run:
 
 ```bash

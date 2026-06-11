@@ -23,6 +23,7 @@ MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-160}"
 TEMPERATURE="${TEMPERATURE:-0.8}"
 TOP_P="${TOP_P:-0.9}"
 TOP_K="${TOP_K:-50}"
+OUTPUT="${OUTPUT:-}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 
 if [ ! -f "${SIF}" ]; then
@@ -31,6 +32,11 @@ if [ ! -f "${SIF}" ]; then
 fi
 
 cd "${REPO_DIR}"
+
+EXTRA_ARGS=()
+if [ -n "${OUTPUT}" ]; then
+  EXTRA_ARGS=(--output "${OUTPUT}")
+fi
 
 singularity run \
   "${SIF}" \
@@ -41,4 +47,5 @@ singularity run \
   --max-new-tokens "${MAX_NEW_TOKENS}" \
   --temperature "${TEMPERATURE}" \
   --top-p "${TOP_P}" \
-  --top-k "${TOP_K}"
+  --top-k "${TOP_K}" \
+  "${EXTRA_ARGS[@]}"

@@ -289,3 +289,60 @@ sbatch --export=ALL slurm/score_samples.sh
 ```
 
 This writes `samples.scores.jsonl` and `samples.summary.json` next to `samples.jsonl`.
+
+## Supervised Fine-Tuning
+
+The first SFT path expects one prompt/response pair per JSONL line:
+
+```json
+{"prompt": "سوال یا ہدایت...", "response": "مثالی جواب...", "source": "optional"}
+```
+
+Only `prompt` and `response` are required. The trainer formats each record as:
+
+```text
+ہدایت:
+{prompt}
+
+جواب:
+{response}
+```
+
+Loss is applied only to the response tokens plus EOS; prompt/template and padding labels are masked with `-100`.
+
+Place the initial SFT split on LUMI scratch:
+
+```bash
+/scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft/sft_train.jsonl
+/scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft/sft_val.jsonl
+```
+
+Run the SFT preflight, smoke test, and full run:
+
+```bash
+CONFIG=configs/urdu_700m_sft_v1.yaml sbatch --export=ALL slurm/preflight_sft.sh
+CONFIG=configs/urdu_700m_sft_v1.yaml MAX_STEPS=20 sbatch --export=ALL slurm/train_sft.sh
+CONFIG=configs/urdu_700m_sft_v1.yaml sbatch --export=ALL slurm/train_sft.sh
+```
+
+Resume the SFT run:
+
+```bash
+CONFIG=configs/urdu_700m_sft_v1.yaml RESUME=latest sbatch --export=ALL slurm/train_sft.sh
+```
+
+Generate from the latest SFT checkpoint with the recommended decoding preset:
+
+```bash
+export CONFIG=configs/urdu_700m_sft_v1.yaml
+export CHECKPOINT=latest
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_v1/samples_t07_p085_r112_ng6_96.jsonl
+export MAX_NEW_TOKENS=96
+export TEMPERATURE=0.7
+export TOP_P=0.85
+export TOP_K=40
+export REPETITION_PENALTY=1.12
+export NO_REPEAT_NGRAM_SIZE=6
+
+sbatch --export=ALL slurm/generate_samples.sh
+```

@@ -23,6 +23,8 @@ MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-160}"
 TEMPERATURE="${TEMPERATURE:-0.8}"
 TOP_P="${TOP_P:-0.9}"
 TOP_K="${TOP_K:-50}"
+REPETITION_PENALTY="${REPETITION_PENALTY:-1.0}"
+NO_REPEAT_NGRAM_SIZE="${NO_REPEAT_NGRAM_SIZE:-0}"
 OUTPUT="${OUTPUT:-}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 
@@ -48,4 +50,6 @@ singularity run \
   --temperature "${TEMPERATURE}" \
   --top-p "${TOP_P}" \
   --top-k "${TOP_K}" \
+  --repetition-penalty "${REPETITION_PENALTY}" \
+  --no-repeat-ngram-size "${NO_REPEAT_NGRAM_SIZE}" \
   "${EXTRA_ARGS[@]}"

@@ -52,10 +52,41 @@ def load_model(config: dict[str, Any], checkpoint_path: Path, device: object) ->
     return model
 
 
-def sample_next_token(logits: object, temperature: float, top_p: float, top_k: int) -> int:
+def repeated_ngram_next_tokens(token_ids: list[int], ngram_size: int) -> set[int]:
+    if ngram_size <= 0 or len(token_ids) < ngram_size - 1:
+        return set()
+    prefix = tuple(token_ids[-(ngram_size - 1) :])
+    blocked = set()
+    for index in range(len(token_ids) - ngram_size + 1):
+        if tuple(token_ids[index : index + ngram_size - 1]) == prefix:
+            blocked.add(token_ids[index + ngram_size - 1])
+    return blocked
+
+
+def apply_repetition_penalty(logits: object, token_ids: list[int], penalty: float) -> object:
+    if penalty <= 1.0 or not token_ids:
+        return logits
+    for token_id in set(token_ids):
+        logits[token_id] = logits[token_id] * penalty if logits[token_id] < 0 else logits[token_id] / penalty
+    return logits
+
+
+def sample_next_token(
+    logits: object,
+    token_ids: list[int],
+    temperature: float,
+    top_p: float,
+    top_k: int,
+    repetition_penalty: float,
+    no_repeat_ngram_size: int,
+) -> int:
     import torch
 
     logits = logits.float()
+    logits = apply_repetition_penalty(logits, token_ids, repetition_penalty)
+    blocked_tokens = repeated_ngram_next_tokens(token_ids, no_repeat_ngram_size)
+    if blocked_tokens:
+        logits[list(blocked_tokens)] = float("-inf")
     if temperature <= 0:
         return int(torch.argmax(logits).item())
     logits = logits / temperature
@@ -85,6 +116,8 @@ def generate(
     temperature: float,
     top_p: float,
     top_k: int,
+    repetition_penalty: float,
+    no_repeat_ngram_size: int,
 ) -> str:
     import torch
 
@@ -99,7 +132,15 @@ def generate(
             context = token_ids[-seq_len:]
             input_ids = torch.tensor([context], dtype=torch.long, device=device)
             logits = model(input_ids)[0, -1]
-            next_id = sample_next_token(logits, temperature=temperature, top_p=top_p, top_k=top_k)
+            next_id = sample_next_token(
+                logits,
+                token_ids=context,
+                temperature=temperature,
+                top_p=top_p,
+                top_k=top_k,
+                repetition_penalty=repetition_penalty,
+                no_repeat_ngram_size=no_repeat_ngram_size,
+            )
             if next_id == eos_id:
                 break
             token_ids.append(next_id)
@@ -116,6 +157,8 @@ def main() -> None:
     parser.add_argument("--temperature", type=float, default=0.8)
     parser.add_argument("--top-p", type=float, default=0.9)
     parser.add_argument("--top-k", type=int, default=50)
+    parser.add_argument("--repetition-penalty", type=float, default=1.0)
+    parser.add_argument("--no-repeat-ngram-size", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -150,6 +193,8 @@ def main() -> None:
                 temperature=args.temperature,
                 top_p=args.top_p,
                 top_k=args.top_k,
+                repetition_penalty=args.repetition_penalty,
+                no_repeat_ngram_size=args.no_repeat_ngram_size,
             )
             record = {
                 "prompt": prompt,
@@ -159,6 +204,8 @@ def main() -> None:
                 "temperature": args.temperature,
                 "top_p": args.top_p,
                 "top_k": args.top_k,
+                "repetition_penalty": args.repetition_penalty,
+                "no_repeat_ngram_size": args.no_repeat_ngram_size,
             }
             print(json.dumps(record, ensure_ascii=False))
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")

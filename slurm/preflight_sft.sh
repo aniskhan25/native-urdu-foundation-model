@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=urdu-sft-preflight
-#SBATCH --partition=small-g
+#SBATCH --partition=dev-g
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=1

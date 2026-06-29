@@ -1,0 +1,41 @@
+version: 1
+validation_fraction: 0.05
+seed: 42
+include_curated_seed: true
+quality:
+  min_prompt_chars: 10
+  min_response_chars: 20
+  max_prompt_chars: 4000
+  max_response_chars: 8000
+  min_combined_urdu_script_ratio: 0.30
+exclude_prompt_files:
+  - eval/prompts_sft_heldout.txt
+sources:
+  - id: aya_urdu_human
+    dataset: CohereLabs/aya_dataset
+    config: default
+    split: train
+    prompt_field: inputs
+    response_field: targets
+    category_field: annotation_type
+    filters:
+      language_code: urd
+    max_records: 3000
+    max_scanned: 250000
+    shuffle_buffer: 5000
+    seed: 42
+    license: apache-2.0
+    provenance: human_annotated
+  - id: traversaal_urdu_instruct
+    dataset: large-traversaal/urdu-instruct
+    config: default
+    split: train
+    prompt_field: instruction
+    response_field: output
+    category_field: category
+    max_records: 7000
+    max_scanned: 20000
+    shuffle_buffer: 10000
+    seed: 42
+    license: cc-by-sa-4.0
+    provenance: synthetic_gpt4o

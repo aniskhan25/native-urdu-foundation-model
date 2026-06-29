@@ -326,6 +326,36 @@ python -m sft.prepare_seed_sft \
 
 This seed set is only a starter for checking SFT behavior. It covers the observed base-model weak spots: repetition-prone Urdu prompts, simple math, summaries, grammar/style correction, code-switching, safety/uncertainty, and short creative writing.
 
+Compile SFT corpus v1 from the human-annotated Urdu subset of [Aya Dataset](https://huggingface.co/datasets/CohereLabs/aya_dataset), [Traversaal Urdu Instruct](https://huggingface.co/datasets/large-traversaal/urdu-instruct), and the local curated seed records. Source mappings, filters, caps, provenance, and licenses are defined in `configs/sft_sources_v1.yaml`.
+
+Run a small compiler pilot first:
+
+```bash
+export MAX_RECORDS_PER_SOURCE=100
+export MIN_TOTAL_RECORDS=100
+export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft_pilot
+sbatch --export=ALL slurm/compile_sft.sh
+```
+
+Compile the full v1 target after inspecting the pilot:
+
+```bash
+unset MAX_RECORDS_PER_SOURCE
+unset MIN_TOTAL_RECORDS
+export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft
+sbatch --export=ALL slurm/compile_sft.sh
+```
+
+The compiler writes:
+
+```text
+sft_train.jsonl
+sft_val.jsonl
+sft_summary.json
+```
+
+It normalizes text, applies source language filters, rejects low-quality records, removes duplicate prompts/pairs, excludes exact held-out prompt overlap, creates a deterministic source/category-aware validation split, and reports accepted counts by source, category, license, and provenance. Review `sft_summary.json` and at least 100 random training examples before starting a full SFT run.
+
 Run the SFT preflight and one-node `dev-g` smoke test:
 
 ```bash

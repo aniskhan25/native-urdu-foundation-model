@@ -346,6 +346,8 @@ export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-dat
 sbatch --export=ALL slurm/compile_sft.sh
 ```
 
+Use `SFT_SOURCE_CONFIG` to override the compiler source config. The generic `CONFIG` variable is reserved for training and generation jobs and is intentionally ignored by `compile_sft.sh`.
+
 The compiler writes:
 
 ```text

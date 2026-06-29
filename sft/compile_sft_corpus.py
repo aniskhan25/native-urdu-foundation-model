@@ -19,7 +19,15 @@ from sft.prepare_seed_sft import SEED_RECORDS
 
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle)
+        config = yaml.safe_load(handle)
+    if not isinstance(config, dict) or not isinstance(config.get("sources"), list):
+        raise ValueError(
+            f"{path} is not an SFT source config: missing sources list. "
+            "Use configs/sft_sources_v1.yaml or set SFT_SOURCE_CONFIG."
+        )
+    if not isinstance(config.get("quality"), dict):
+        raise ValueError(f"{path} is not an SFT source config: missing quality mapping")
+    return config
 
 
 def record_matches_filters(record: dict[str, Any], filters: dict[str, Any]) -> bool:

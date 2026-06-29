@@ -6,6 +6,7 @@ from unittest.mock import patch
 from sft.compile_sft_corpus import accept_records
 from sft.compile_sft_corpus import canonicalize_record
 from sft.compile_sft_corpus import compile_corpus
+from sft.compile_sft_corpus import load_config
 from sft.compile_sft_corpus import record_matches_filters
 from sft.compile_sft_corpus import split_records
 
@@ -20,6 +21,14 @@ QUALITY = {
 
 
 class CompileSftCorpusTests(unittest.TestCase):
+    def test_rejects_training_config_with_clear_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "training.yaml"
+            path.write_text("training:\n  lr: 0.00002\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "set SFT_SOURCE_CONFIG"):
+                load_config(path)
+
     def test_canonicalizes_configured_fields(self):
         source = {
             "id": "aya",

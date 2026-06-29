@@ -17,7 +17,7 @@ module load lumi-aif-singularity-bindings
 
 REPO_DIR="${REPO_DIR:-/scratch/project_462000131/anisrahm/native-urdu-foundation-model}"
 DATA_ROOT="${DATA_ROOT:-/scratch/project_462000131/anisrahm/native-urdu-foundation-data}"
-CONFIG="${CONFIG:-configs/sft_sources_v1.yaml}"
+SFT_SOURCE_CONFIG="${SFT_SOURCE_CONFIG:-configs/sft_sources_v1.yaml}"
 OUTPUT_DIR="${OUTPUT_DIR:-${DATA_ROOT}/sft}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 MIN_TOTAL_RECORDS="${MIN_TOTAL_RECORDS:-5000}"
@@ -45,7 +45,7 @@ cd "${REPO_DIR}"
 singularity run \
   "${SIF}" \
   python -m sft.compile_sft_corpus \
-  --config "${CONFIG}" \
+  --config "${SFT_SOURCE_CONFIG}" \
   --output-dir "${OUTPUT_DIR}" \
   --min-total-records "${MIN_TOTAL_RECORDS}" \
   "${EXTRA_ARGS[@]}"

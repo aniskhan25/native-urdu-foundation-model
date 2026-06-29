@@ -354,7 +354,8 @@ Generate from the latest SFT checkpoint with the recommended decoding preset:
 ```bash
 export CONFIG=configs/urdu_700m_sft_v1.yaml
 export CHECKPOINT=latest
-export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_v1/samples_t07_p085_r112_ng6_96.jsonl
+export PROMPTS=eval/prompts_sft_heldout.txt
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_v1/samples_sft_heldout.jsonl
 export MAX_NEW_TOKENS=96
 export TEMPERATURE=0.7
 export TOP_P=0.85
@@ -366,3 +367,5 @@ sbatch --export=ALL slurm/generate_samples.sh
 ```
 
 SFT configs set `generation.prompt_template: urdu_sft`, so generation automatically applies the same `ہدایت:` / `جواب:` template used during training. Set `PROMPT_TEMPLATE=raw` only when evaluating an unformatted base checkpoint with an SFT config.
+
+Use `eval/prompts_sft_heldout.txt` for SFT quality checks. The original prompts in `eval/prompts_urdu.txt` are included in the curated seed training records and therefore measure memorization rather than generalization after SFT.

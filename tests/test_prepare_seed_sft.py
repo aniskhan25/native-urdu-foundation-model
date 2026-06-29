@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from eval.generate_samples import load_prompts
 from sft.prepare_seed_sft import SEED_RECORDS
 from sft.prepare_seed_sft import normalize_record
 from sft.prepare_seed_sft import split_records
@@ -11,6 +12,14 @@ from sft.prepare_seed_sft import write_jsonl
 
 
 class PrepareSeedSftTests(unittest.TestCase):
+    def test_heldout_prompts_do_not_overlap_seed_records(self):
+        prompt_path = Path(__file__).parents[1] / "eval" / "prompts_sft_heldout.txt"
+        heldout_prompts = set(load_prompts(prompt_path))
+        seed_prompts = {normalize_record(record)["prompt"] for record in SEED_RECORDS}
+
+        self.assertTrue(heldout_prompts)
+        self.assertTrue(heldout_prompts.isdisjoint(seed_prompts))
+
     def test_seed_records_have_required_fields(self):
         records = [normalize_record(record) for record in SEED_RECORDS]
 

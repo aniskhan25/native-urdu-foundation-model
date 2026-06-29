@@ -326,11 +326,20 @@ python -m sft.prepare_seed_sft \
 
 This seed set is only a starter for checking SFT behavior. It covers the observed base-model weak spots: repetition-prone Urdu prompts, simple math, summaries, grammar/style correction, code-switching, safety/uncertainty, and short creative writing.
 
-Run the SFT preflight, smoke test, and full run:
+Run the SFT preflight and one-node `dev-g` smoke test:
 
 ```bash
 CONFIG=configs/urdu_700m_sft_v1.yaml sbatch --export=ALL slurm/preflight_sft.sh
-CONFIG=configs/urdu_700m_sft_v1.yaml MAX_STEPS=20 sbatch --export=ALL slurm/train_sft.sh
+CONFIG=configs/urdu_700m_sft_smoke.yaml \
+  sbatch --partition=dev-g --nodes=1 --gpus-per-node=8 --time=00:30:00 \
+  --export=ALL slurm/train_sft.sh
+```
+
+The smoke config uses a global batch of 64, preserving the tested per-rank batch of 8 on one eight-GPU node. Do not run full SFT on the 30-example seed set. Build the larger curated dataset first, then run `configs/urdu_700m_sft_v1.yaml` on `standard-g`.
+
+Run full SFT after replacing the seed files with the curated train/validation split:
+
+```bash
 CONFIG=configs/urdu_700m_sft_v1.yaml sbatch --export=ALL slurm/train_sft.sh
 ```
 
@@ -355,3 +364,5 @@ export NO_REPEAT_NGRAM_SIZE=6
 
 sbatch --export=ALL slurm/generate_samples.sh
 ```
+
+SFT configs set `generation.prompt_template: urdu_sft`, so generation automatically applies the same `ہدایت:` / `جواب:` template used during training. Set `PROMPT_TEMPLATE=raw` only when evaluating an unformatted base checkpoint with an SFT config.

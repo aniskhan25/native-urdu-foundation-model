@@ -11,6 +11,9 @@ from typing import Any
 import sentencepiece as spm
 import yaml
 
+from data_pipeline.normalize_urdu import normalize_urdu
+from training.sft_dataset import format_prompt
+
 
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
@@ -34,6 +37,14 @@ def load_prompts(path: Path) -> list[str]:
     if not prompts:
         raise ValueError(f"No prompts found in {path}")
     return prompts
+
+
+def prompt_for_model(prompt: str, template: str) -> str:
+    if template == "raw":
+        return prompt
+    if template == "urdu_sft":
+        return format_prompt(normalize_urdu(prompt))
+    raise ValueError(f"Unknown prompt template: {template}")
 
 
 def load_model(config: dict[str, Any], checkpoint_path: Path, device: object) -> object:
@@ -105,7 +116,7 @@ def sample_next_token(
     return int(torch.multinomial(probabilities, num_samples=1).item())
 
 
-def generate(
+def generate_completion(
     *,
     model: object,
     tokenizer: object,
@@ -126,6 +137,7 @@ def generate(
     token_ids = tokenizer.encode(prompt, out_type=int)
     if bos_id >= 0:
         token_ids = [bos_id] + token_ids
+    prompt_length = len(token_ids)
 
     with torch.no_grad():
         for _ in range(max_new_tokens):
@@ -144,7 +156,7 @@ def generate(
             if next_id == eos_id:
                 break
             token_ids.append(next_id)
-    return tokenizer.decode(token_ids[1:] if bos_id >= 0 and token_ids and token_ids[0] == bos_id else token_ids)
+    return tokenizer.decode(token_ids[prompt_length:])
 
 
 def main() -> None:
@@ -159,6 +171,7 @@ def main() -> None:
     parser.add_argument("--top-k", type=int, default=50)
     parser.add_argument("--repetition-penalty", type=float, default=1.0)
     parser.add_argument("--no-repeat-ngram-size", type=int, default=0)
+    parser.add_argument("--prompt-template", choices=("raw", "urdu_sft"), default=None)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
@@ -175,6 +188,7 @@ def main() -> None:
     model = load_model(config, checkpoint_path, device)
     seq_len = int(config["data"]["sequence_length"])
     prompts = load_prompts(args.prompts)
+    prompt_template = args.prompt_template or config.get("generation", {}).get("prompt_template", "raw")
 
     output_path = args.output
     if output_path is None:
@@ -183,10 +197,11 @@ def main() -> None:
 
     with output_path.open("w", encoding="utf-8") as handle:
         for prompt in prompts:
-            text = generate(
+            model_prompt = prompt_for_model(prompt, prompt_template)
+            completion = generate_completion(
                 model=model,
                 tokenizer=tokenizer,
-                prompt=prompt,
+                prompt=model_prompt,
                 device=device,
                 seq_len=seq_len,
                 max_new_tokens=args.max_new_tokens,
@@ -198,9 +213,11 @@ def main() -> None:
             )
             record = {
                 "prompt": prompt,
-                "completion": text[len(prompt) :].strip() if text.startswith(prompt) else text,
-                "text": text,
+                "model_prompt": model_prompt,
+                "completion": completion.strip(),
+                "text": f"{prompt} {completion.strip()}".strip(),
                 "checkpoint": str(checkpoint_path),
+                "prompt_template": prompt_template,
                 "temperature": args.temperature,
                 "top_p": args.top_p,
                 "top_k": args.top_k,

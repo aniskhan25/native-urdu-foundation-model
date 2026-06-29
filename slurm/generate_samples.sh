@@ -25,6 +25,7 @@ TOP_P="${TOP_P:-0.9}"
 TOP_K="${TOP_K:-50}"
 REPETITION_PENALTY="${REPETITION_PENALTY:-1.0}"
 NO_REPEAT_NGRAM_SIZE="${NO_REPEAT_NGRAM_SIZE:-0}"
+PROMPT_TEMPLATE="${PROMPT_TEMPLATE:-}"
 OUTPUT="${OUTPUT:-}"
 SIF="${SIF:-/appl/local/laifs/containers/lumi-multitorch-latest.sif}"
 
@@ -38,6 +39,9 @@ cd "${REPO_DIR}"
 EXTRA_ARGS=()
 if [ -n "${OUTPUT}" ]; then
   EXTRA_ARGS=(--output "${OUTPUT}")
+fi
+if [ -n "${PROMPT_TEMPLATE}" ]; then
+  EXTRA_ARGS+=(--prompt-template "${PROMPT_TEMPLATE}")
 fi
 
 singularity run \

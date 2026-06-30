@@ -1,0 +1,52 @@
+project: native_urdu_foundation_model
+run_name: 700m_sft_balanced_v2
+tokenizer:
+  path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.model
+  vocab_size: 32000
+  normalization: custom_urdu_nfkc_then_nfc_v1
+data:
+  train_jsonl: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft_balanced_v2/sft_train.jsonl
+  validation_jsonl: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft_balanced_v2/sft_val.jsonl
+  sequence_length: 1024
+generation:
+  prompt_template: urdu_sft
+model:
+  architecture: decoder_only_llama_style
+  params: 700000000
+  hidden_size: 1536
+  layers: 24
+  attention_heads: 16
+  kv_heads: 16
+  intermediate_size: 4096
+  seq_len: 2048
+  activation: swiglu
+  norm: rmsnorm
+  position_embedding: rope
+  rope_theta: 10000
+  tie_embeddings: true
+training:
+  base_checkpoint: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/step_000432.pt
+  precision: bf16
+  optimizer: adamw
+  lr: 0.00001
+  min_lr_ratio: 0.1
+  weight_decay: 0.0
+  beta1: 0.9
+  beta2: 0.95
+  eps: 1.0e-8
+  global_batch_examples: 8
+  epochs: 2
+  warmup_ratio: 0.03
+  grad_clip: 1.0
+  activation_checkpointing: true
+  checkpoint_interval_steps: 40
+  keep_last_checkpoints: 4
+  validation_interval_steps: 20
+  validation_batches: 8
+infrastructure:
+  platform: LUMI-G
+  backend: pytorch_rocm_rccl
+  parallelism: fsdp_full_shard
+  nodes: 1
+  logical_gpus_per_node: 8
+  output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_balanced_v2

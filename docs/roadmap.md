@@ -35,7 +35,7 @@ The reviewed v1 corpus contained 5,412 examples: 4,984 synthetic Traversaal reco
 
 Held-out sampled and greedy generation both failed effectively 12 of 12 prompts. The model learned surface templates such as `حل:` and generic safety language but failed arithmetic, translation, correction, summarization, code-switching, and story generation. Checkpoints in `runs/700m_sft_corpus_v1` are rejected and must not be used as release or continuation checkpoints.
 
-## In Progress: Balanced SFT Corpus V2
+## Completed: Task-First SFT Corpus V2
 
 Goal: a smaller diagnostic corpus with explicit task balance and auditable references before any further SFT training.
 
@@ -53,7 +53,7 @@ Replacement v2 policy:
 - Emit a deterministic 120-record review sample spanning every source/category group.
 - Fail compilation if any configured category quota cannot be filled.
 
-Projected output is 630 examples: 600 deterministic task records and 30 curated records, split into 570 training and 60 validation examples.
+Job `19620960` compiled the expected 630 examples: 600 deterministic task records and 30 curated records, split into 570 training and 60 validation examples. Independent verification found no duplicate prompts or responses, no train/validation overlap, no held-out overlap, and an exact match with the local generator contract.
 
 Exit criteria before creating a v2 training config:
 
@@ -62,7 +62,16 @@ Exit criteria before creating a v2 training config:
 - manual acceptance of the 120-record stratified review sample
 - no malformed arithmetic, mistranslation, task mismatch, boilerplate refusal, or repeated text in that sample
 
-Only after these gates pass should a short controlled v2 training configuration be added. It must start from `runs/700m_clean_continue_v1/step_000432.pt`, not any v1 SFT checkpoint.
+All corpus gates passed. The controlled v2 training config starts from `runs/700m_clean_continue_v1/step_000432.pt`, not any v1 SFT checkpoint.
+
+## Next: Controlled SFT V2 Diagnostic
+
+- One `dev-g` node with eight logical GPUs
+- Global batch 8 for 143 optimizer steps over two epochs
+- Peak learning rate `1e-5`
+- Validation every 20 steps
+- Isolated output directory `runs/700m_sft_balanced_v2`
+- Held-out sampled and greedy generation required before accepting any checkpoint
 
 ## Later
 

@@ -372,36 +372,38 @@ sft_review_sample.jsonl  # when review_sample_size is configured
 
 It normalizes text, applies source language filters, rejects low-quality records, removes duplicate prompts, responses, and pairs, excludes exact held-out prompt overlap, creates a deterministic source/category-aware validation split, and reports accepted counts by source, category, license, and provenance. Review `sft_summary.json` and at least 100 random training examples before starting a full SFT run.
 
-Run the SFT preflight and one-node `dev-g` smoke test:
+Run the task-first v2 preflight:
 
 ```bash
-CONFIG=configs/urdu_700m_sft_v1.yaml sbatch --export=ALL slurm/preflight_sft.sh
-CONFIG=configs/urdu_700m_sft_smoke.yaml \
-  sbatch --partition=dev-g --nodes=1 --gpus-per-node=8 --time=00:30:00 \
-  --export=ALL slurm/train_sft.sh
+export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
+sbatch --export=ALL slurm/preflight_sft.sh
 ```
 
-The smoke config uses a global batch of 64, preserving the tested per-rank batch of 8 on one eight-GPU node. Do not run full SFT on the 30-example seed set. Build the larger curated dataset first, then run `configs/urdu_700m_sft_v1.yaml` on `standard-g`.
-
-Run full SFT after replacing the seed files with the curated train/validation split:
+Run the controlled v2 diagnostic on one `dev-g` node:
 
 ```bash
-CONFIG=configs/urdu_700m_sft_v1.yaml sbatch --export=ALL slurm/train_sft.sh
+export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
+unset RESUME MAX_STEPS
+sbatch --partition=dev-g --nodes=1 --gpus-per-node=8 --time=00:30:00 --export=ALL slurm/train_sft.sh
 ```
 
-Resume the SFT run:
+The v2 config starts from the clean base checkpoint, uses a global batch of 8 for 143 optimizer steps over two epochs, and writes to `runs/700m_sft_balanced_v2`. It does not resume from either rejected SFT run.
+
+Resume v2 only after confirming the intended checkpoint:
 
 ```bash
-CONFIG=configs/urdu_700m_sft_v1.yaml RESUME=latest sbatch --export=ALL slurm/train_sft.sh
+export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
+export RESUME=latest
+sbatch --partition=dev-g --nodes=1 --gpus-per-node=8 --time=00:30:00 --export=ALL slurm/train_sft.sh
 ```
 
 Generate from the latest SFT checkpoint with the recommended decoding preset:
 
 ```bash
-export CONFIG=configs/urdu_700m_sft_v1.yaml
+export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
 export CHECKPOINT=latest
 export PROMPTS=eval/prompts_sft_heldout.txt
-export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_corpus_v1/samples_sft_heldout.jsonl
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_balanced_v2/samples_sft_heldout.jsonl
 export MAX_NEW_TOKENS=96
 export TEMPERATURE=0.7
 export TOP_P=0.85

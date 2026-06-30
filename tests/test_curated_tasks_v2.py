@@ -1,3 +1,4 @@
+import math
 import unittest
 from pathlib import Path
 
@@ -52,6 +53,19 @@ class CuratedTasksV2Tests(unittest.TestCase):
         self.assertEqual(summary["sources"]["curated_tasks_v2"]["accepted"], 600)
         self.assertEqual(summary["sources"]["curated_seed_v1"]["accepted"], 30)
         self.assertEqual(summary["category_limit_shortages"], {})
+
+    def test_v2_training_config_uses_clean_base_and_expected_schedule(self):
+        config = yaml.safe_load(
+            Path("configs/urdu_700m_sft_balanced_v2.yaml").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(config["data"]["sequence_length"], 1024)
+        self.assertIn("/sft_balanced_v2/sft_train.jsonl", config["data"]["train_jsonl"])
+        self.assertIn("/700m_clean_continue_v1/step_000432.pt", config["training"]["base_checkpoint"])
+        self.assertEqual(config["training"]["global_batch_examples"], 8)
+        self.assertEqual(config["training"]["epochs"], 2)
+        self.assertEqual(math.ceil(570 * 2 / 8), 143)
+        self.assertTrue(config["infrastructure"]["output_dir"].endswith("/700m_sft_balanced_v2"))
 
 
 if __name__ == "__main__":

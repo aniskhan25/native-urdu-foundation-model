@@ -34,19 +34,19 @@ training:
   beta1: 0.9
   beta2: 0.95
   eps: 1.0e-8
-  global_batch_examples: 8
+  global_batch_examples: 32
   epochs: 2
   warmup_ratio: 0.03
   grad_clip: 1.0
   activation_checkpointing: true
-  checkpoint_interval_steps: 40
+  checkpoint_interval_steps: 10
   keep_last_checkpoints: 4
-  validation_interval_steps: 20
-  validation_batches: 8
+  validation_interval_steps: 5
+  validation_batches: 2
 infrastructure:
   platform: LUMI-G
   backend: pytorch_rocm_rccl
   parallelism: fsdp_full_shard
-  nodes: 1
+  nodes: 4
   logical_gpus_per_node: 8
   output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_balanced_v2

@@ -379,22 +379,22 @@ export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
 sbatch --export=ALL slurm/preflight_sft.sh
 ```
 
-Run the controlled v2 diagnostic on one `dev-g` node:
+Run the controlled v2 diagnostic on four `dev-g` nodes:
 
 ```bash
 export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
 unset RESUME MAX_STEPS
-sbatch --partition=dev-g --nodes=1 --gpus-per-node=8 --time=00:30:00 --export=ALL slurm/train_sft.sh
+sbatch --partition=dev-g --nodes=4 --gpus-per-node=8 --time=00:30:00 --export=ALL slurm/train_sft.sh
 ```
 
-The v2 config starts from the clean base checkpoint, uses a global batch of 8 for 143 optimizer steps over two epochs, and writes to `runs/700m_sft_balanced_v2`. It does not resume from either rejected SFT run.
+The v2 config starts from the clean base checkpoint, uses the proven 32-rank FSDP topology and a global batch of 32 for 36 optimizer steps over two epochs, and writes to `runs/700m_sft_balanced_v2`. It does not resume from either rejected SFT run.
 
 Resume v2 only after confirming the intended checkpoint:
 
 ```bash
 export CONFIG=configs/urdu_700m_sft_balanced_v2.yaml
 export RESUME=latest
-sbatch --partition=dev-g --nodes=1 --gpus-per-node=8 --time=00:30:00 --export=ALL slurm/train_sft.sh
+sbatch --partition=dev-g --nodes=4 --gpus-per-node=8 --time=00:30:00 --export=ALL slurm/train_sft.sh
 ```
 
 Generate from the latest SFT checkpoint with the recommended decoding preset:

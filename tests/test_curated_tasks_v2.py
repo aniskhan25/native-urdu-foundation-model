@@ -62,9 +62,10 @@ class CuratedTasksV2Tests(unittest.TestCase):
         self.assertEqual(config["data"]["sequence_length"], 1024)
         self.assertIn("/sft_balanced_v2/sft_train.jsonl", config["data"]["train_jsonl"])
         self.assertIn("/700m_clean_continue_v1/step_000432.pt", config["training"]["base_checkpoint"])
-        self.assertEqual(config["training"]["global_batch_examples"], 8)
+        self.assertEqual(config["training"]["global_batch_examples"], 32)
         self.assertEqual(config["training"]["epochs"], 2)
-        self.assertEqual(math.ceil(570 * 2 / 8), 143)
+        self.assertEqual(math.ceil(570 * 2 / 32), 36)
+        self.assertEqual(config["infrastructure"]["nodes"], 4)
         self.assertTrue(config["infrastructure"]["output_dir"].endswith("/700m_sft_balanced_v2"))
 
 

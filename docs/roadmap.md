@@ -66,10 +66,10 @@ All corpus gates passed. The controlled v2 training config starts from `runs/700
 
 ## Next: Controlled SFT V2 Diagnostic
 
-- One `dev-g` node with eight logical GPUs
-- Global batch 8 for 143 optimizer steps over two epochs
+- Four `dev-g` nodes with 32 logical GPUs; the one-node attempt exhausted memory with only eight FSDP shards
+- Global batch 32 for 36 optimizer steps over two epochs
 - Peak learning rate `1e-5`
-- Validation every 20 steps
+- Validation every 5 steps
 - Isolated output directory `runs/700m_sft_balanced_v2`
 - Held-out sampled and greedy generation required before accepting any checkpoint
 

@@ -55,6 +55,24 @@ class CompileSftCorpusTests(unittest.TestCase):
         self.assertEqual(record["category"], "original")
         self.assertEqual(record["license"], "apache-2.0")
 
+    def test_translates_synthetic_reasoning_labels(self):
+        source = {
+            "id": "synthetic",
+            "prompt_field": "instruction",
+            "response_field": "output",
+            "license": "cc-by-sa-4.0",
+        }
+
+        record = canonicalize_record(
+            {
+                "instruction": "دو جمع دو کتنے ہوتے ہیں؟",
+                "output": "Reasoning: دو میں دو جمع کریں۔ Answer: چار",
+            },
+            source,
+        )
+
+        self.assertEqual(record["response"], "حل: دو میں دو جمع کریں۔ جواب: چار")
+
     def test_matches_exact_source_filters(self):
         self.assertTrue(record_matches_filters({"language_code": "urd"}, {"language_code": "urd"}))
         self.assertFalse(record_matches_filters({"language_code": "eng"}, {"language_code": "urd"}))

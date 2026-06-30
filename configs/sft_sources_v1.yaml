@@ -27,7 +27,7 @@ sources:
     filters:
       language_code: urd
     max_records: 3000
-    max_scanned: 250000
+    max_scanned: 1000000
     shuffle_buffer: 5000
     seed: 42
     license: apache-2.0

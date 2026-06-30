@@ -19,6 +19,10 @@ from sft.prepare_seed_sft import SEED_RECORDS
 
 
 PASHTO_SPECIFIC_CHARS = frozenset("ځڅډړږښګڼټۍې")
+SFT_LABEL_REPLACEMENTS = {
+    "Reasoning:": "حل:",
+    "Answer:": "جواب:",
+}
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -46,9 +50,12 @@ def canonicalize_record(record: dict[str, Any], source: dict[str, Any]) -> dict[
         prompt = f"{prompt}\n\n{str(record[input_field]).strip()}"
     category_field = source.get("category_field")
     category = str(record.get(category_field, "unknown")) if category_field else "unknown"
+    response = normalize_urdu(response)
+    for old, new in SFT_LABEL_REPLACEMENTS.items():
+        response = response.replace(old, new)
     return {
         "prompt": normalize_urdu(prompt),
-        "response": normalize_urdu(response),
+        "response": response,
         "source": str(source["id"]),
         "category": category or "unknown",
         "license": str(source["license"]),

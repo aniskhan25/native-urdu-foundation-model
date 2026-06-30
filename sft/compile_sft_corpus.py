@@ -142,6 +142,47 @@ def accept_records(
     return accepted, rejected
 
 
+def apply_category_limits(
+    records: list[dict[str, str]], limits: dict[str, dict[str, int]], seed: int
+) -> tuple[list[dict[str, str]], Counter]:
+    if not limits:
+        return records, Counter()
+
+    groups: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for record in records:
+        groups[(record["source"], record["category"])].append(record)
+
+    selected = []
+    rejected = Counter()
+    rng = random.Random(seed)
+    for (source, category), group in sorted(groups.items()):
+        source_limits = limits.get(source)
+        if source_limits is None:
+            selected.extend(group)
+            continue
+        if category not in source_limits:
+            rejected["category_not_selected"] += len(group)
+            continue
+        rng.shuffle(group)
+        limit = int(source_limits[category])
+        selected.extend(group[:limit])
+        rejected["category_limit"] += max(0, len(group) - limit)
+    rng.shuffle(selected)
+    return selected, rejected
+
+
+def category_limit_shortages(
+    records: list[dict[str, str]], limits: dict[str, dict[str, int]]
+) -> dict[str, int]:
+    counts = Counter((record["source"], record["category"]) for record in records)
+    return {
+        f"{source}/{category}": expected - counts[(source, category)]
+        for source, categories in limits.items()
+        for category, expected in categories.items()
+        if counts[(source, category)] < int(expected)
+    }
+
+
 def split_records(
     records: list[dict[str, str]], validation_fraction: float, seed: int
 ) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
@@ -165,6 +206,30 @@ def split_records(
     if not validation and train:
         validation.append(train.pop())
     return train, validation
+
+
+def stratified_review_sample(records: list[dict[str, str]], size: int, seed: int) -> list[dict[str, str]]:
+    if size <= 0 or not records:
+        return []
+    if size >= len(records):
+        return list(records)
+
+    groups: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for record in records:
+        groups[(record["source"], record["category"])].append(record)
+
+    rng = random.Random(seed)
+    selected = []
+    remaining = []
+    for key in sorted(groups):
+        group = list(groups[key])
+        rng.shuffle(group)
+        selected.append(group.pop())
+        remaining.extend(group)
+    rng.shuffle(remaining)
+    selected.extend(remaining[: max(0, size - len(selected))])
+    rng.shuffle(selected)
+    return selected[:size]
 
 
 def write_jsonl(path: Path, records: list[dict[str, str]]) -> None:
@@ -257,6 +322,15 @@ def compile_corpus(
         }
 
     accepted, rejected = accept_records(candidates, config["quality"], excluded_prompts)
+    accepted, selection_rejected = apply_category_limits(
+        accepted,
+        config.get("category_limits", {}),
+        int(config.get("seed", 42)),
+    )
+    shortages = category_limit_shortages(accepted, config.get("category_limits", {}))
+    if config.get("require_full_category_limits") and shortages:
+        raise ValueError(f"Category quotas could not be filled: {shortages}")
+    rejected.update(selection_rejected)
     accepted_by_source = Counter(record["source"] for record in accepted)
     categories = Counter(record["category"] for record in accepted)
     licenses = Counter(record["license"] for record in accepted)
@@ -272,12 +346,13 @@ def compile_corpus(
         "licenses": dict(sorted(licenses.items())),
         "provenance": dict(sorted(provenance.items())),
         "excluded_prompts": len(excluded_prompts),
+        "category_limit_shortages": shortages,
     }
     return accepted, summary
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Compile the Urdu SFT v1 corpus.")
+    parser = argparse.ArgumentParser(description="Compile an Urdu SFT corpus.")
     parser.add_argument("--config", type=Path, default=Path("configs/sft_sources_v1.yaml"))
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--source", action="append", dest="sources")
@@ -302,7 +377,14 @@ def main() -> None:
     )
     write_jsonl(args.output_dir / "sft_train.jsonl", train)
     write_jsonl(args.output_dir / "sft_val.jsonl", validation)
-    summary.update({"train": len(train), "validation": len(validation)})
+    review_sample = stratified_review_sample(
+        accepted,
+        int(config.get("review_sample_size", 0)),
+        int(config.get("seed", 42)),
+    )
+    if review_sample:
+        write_jsonl(args.output_dir / "sft_review_sample.jsonl", review_sample)
+    summary.update({"train": len(train), "validation": len(validation), "review_sample": len(review_sample)})
     summary_path = args.output_dir / "sft_summary.json"
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(summary, ensure_ascii=False, indent=2))

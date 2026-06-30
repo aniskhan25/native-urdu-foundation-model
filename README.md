@@ -346,6 +346,19 @@ export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-dat
 sbatch --export=ALL slurm/compile_sft.sh
 ```
 
+Build the smaller balanced v2 candidate corpus after the v1 held-out failure:
+
+```bash
+unset MAX_RECORDS_PER_SOURCE SFT_SOURCES
+export SFT_SOURCE_CONFIG=configs/sft_sources_v2.yaml
+export OUTPUT_DIR=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/sft_balanced_v2
+export MIN_TOTAL_RECORDS=1100
+
+sbatch --export=ALL slurm/compile_sft.sh
+```
+
+V2 excludes Aya and open-domain synthetic QA, tightens prompt and response lengths, and caps the retained Traversaal categories at 80–240 examples each. Compilation fails if any category quota cannot be filled. Inspect `sft_review_sample.jsonl`, which contains 120 deterministic examples covering every retained source/category group, before creating or running a v2 training config.
+
 Use `SFT_SOURCE_CONFIG` to override the compiler source config. The generic `CONFIG` variable is reserved for training and generation jobs and is intentionally ignored by `compile_sft.sh`.
 
 The compiler writes:
@@ -354,6 +367,7 @@ The compiler writes:
 sft_train.jsonl
 sft_val.jsonl
 sft_summary.json
+sft_review_sample.jsonl  # when review_sample_size is configured
 ```
 
 It normalizes text, applies source language filters, rejects low-quality records, removes duplicate prompts, responses, and pairs, excludes exact held-out prompt overlap, creates a deterministic source/category-aware validation split, and reports accepted counts by source, category, license, and provenance. Review `sft_summary.json` and at least 100 random training examples before starting a full SFT run.

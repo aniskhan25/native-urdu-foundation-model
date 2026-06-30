@@ -4,11 +4,14 @@ from pathlib import Path
 from unittest.mock import patch
 
 from sft.compile_sft_corpus import accept_records
+from sft.compile_sft_corpus import apply_category_limits
 from sft.compile_sft_corpus import canonicalize_record
+from sft.compile_sft_corpus import category_limit_shortages
 from sft.compile_sft_corpus import compile_corpus
 from sft.compile_sft_corpus import load_config
 from sft.compile_sft_corpus import record_matches_filters
 from sft.compile_sft_corpus import split_records
+from sft.compile_sft_corpus import stratified_review_sample
 
 
 QUALITY = {
@@ -184,6 +187,66 @@ class CompileSftCorpusTests(unittest.TestCase):
         self.assertEqual(len(validation_a), 4)
         self.assertEqual({record["source"] for record in validation_a}, {"source-a", "source-b"})
 
+    def test_category_limits_are_deterministic_and_leave_other_sources_unrestricted(self):
+        records = [
+            {
+                "prompt": f"سوال {source} {category} {index}",
+                "response": f"جواب {source} {category} {index}",
+                "source": source,
+                "category": category,
+            }
+            for source, category, count in (
+                ("synthetic", "reasoning", 5),
+                ("synthetic", "ethics", 4),
+                ("curated", "math", 3),
+            )
+            for index in range(count)
+        ]
+        limits = {"synthetic": {"reasoning": 2}}
+
+        selected_a, rejected_a = apply_category_limits(records, limits, seed=7)
+        selected_b, rejected_b = apply_category_limits(records, limits, seed=7)
+
+        self.assertEqual(selected_a, selected_b)
+        self.assertEqual(rejected_a, rejected_b)
+        self.assertEqual(len(selected_a), 5)
+        self.assertEqual(sum(record["source"] == "curated" for record in selected_a), 3)
+        self.assertEqual(sum(record["category"] == "reasoning" for record in selected_a), 2)
+        self.assertEqual(rejected_a["category_limit"], 3)
+        self.assertEqual(rejected_a["category_not_selected"], 4)
+
+    def test_review_sample_covers_each_group(self):
+        records = [
+            {
+                "prompt": f"سوال {source} {category} {index}",
+                "response": f"جواب {source} {category} {index}",
+                "source": source,
+                "category": category,
+            }
+            for source, category in (("a", "math"), ("a", "translation"), ("b", "story"))
+            for index in range(10)
+        ]
+
+        sample_a = stratified_review_sample(records, size=9, seed=11)
+        sample_b = stratified_review_sample(records, size=9, seed=11)
+
+        self.assertEqual(sample_a, sample_b)
+        self.assertEqual(len(sample_a), 9)
+        self.assertEqual({(record["source"], record["category"]) for record in sample_a}, {
+            ("a", "math"),
+            ("a", "translation"),
+            ("b", "story"),
+        })
+
+    def test_category_limit_shortages_reports_missing_records(self):
+        records = [
+            {"prompt": "سوال", "response": "جواب", "source": "a", "category": "math"},
+        ]
+
+        shortages = category_limit_shortages(records, {"a": {"math": 3, "story": 2}})
+
+        self.assertEqual(shortages, {"a/math": 2, "a/story": 2})
+
     def test_split_keeps_validation_nonempty_for_small_pilot(self):
         records = [
             {"prompt": "پہلا سوال", "response": "پہلا جواب", "source": "source", "category": "qa"},
@@ -230,6 +293,40 @@ class CompileSftCorpusTests(unittest.TestCase):
         self.assertEqual(summary["sources"]["aya"]["seen"], 2)
         self.assertEqual(summary["sources"]["aya"]["matched"], 1)
         self.assertEqual(summary["sources"]["aya"]["accepted"], 1)
+
+    def test_compile_corpus_fails_when_required_category_quota_is_short(self):
+        config = {
+            "include_curated_seed": False,
+            "require_full_category_limits": True,
+            "category_limits": {"synthetic": {"reasoning": 2}},
+            "quality": QUALITY,
+            "exclude_prompt_files": [],
+            "sources": [
+                {
+                    "id": "synthetic",
+                    "dataset": "example/synthetic",
+                    "prompt_field": "instruction",
+                    "response_field": "output",
+                    "category_field": "category",
+                    "max_records": 10,
+                    "license": "test",
+                    "provenance": "test",
+                }
+            ],
+        }
+        rows = [
+            {
+                "instruction": "یہ ایک مناسب سوال ہے",
+                "output": "یہ ایک مناسب اور مکمل جواب ہے",
+                "category": "reasoning",
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmp, patch(
+            "sft.compile_sft_corpus.iter_hf_source", return_value=iter(rows)
+        ):
+            with self.assertRaisesRegex(ValueError, "synthetic/reasoning"):
+                compile_corpus(config, Path(tmp) / "config.yaml")
 
 
 if __name__ == "__main__":

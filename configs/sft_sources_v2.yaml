@@ -1,0 +1,45 @@
+version: 2
+validation_fraction: 0.10
+review_sample_size: 120
+seed: 42
+include_curated_seed: true
+require_full_category_limits: true
+quality:
+  min_prompt_chars: 15
+  min_response_chars: 25
+  max_prompt_chars: 300
+  max_response_chars: 500
+  min_combined_urdu_script_ratio: 0.30
+  max_pashto_specific_chars: 1
+  max_response_repeated_4gram_ratio: 0.08
+  max_response_repeated_6gram_ratio: 0.04
+  max_response_longest_repeated_ngram: 6
+  max_response_url_hits: 0
+  max_response_boilerplate_hits: 0
+  excluded_source_categories:
+    traversaal_urdu_instruct:
+      - qa
+category_limits:
+  traversaal_urdu_instruct:
+    reasoning: 240
+    translation: 240
+    generation: 200
+    classification: 200
+    sentiment: 160
+    ethics: 80
+exclude_prompt_files:
+  - eval/prompts_sft_heldout.txt
+sources:
+  - id: traversaal_urdu_instruct
+    dataset: large-traversaal/urdu-instruct
+    config: default
+    split: train
+    prompt_field: instruction
+    response_field: output
+    category_field: category
+    max_records: 7000
+    max_scanned: 20000
+    shuffle_buffer: 10000
+    seed: 42
+    license: cc-by-sa-4.0
+    provenance: synthetic_gpt4o

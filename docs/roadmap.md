@@ -29,42 +29,38 @@ The clean continuation removed URL/UI artifacts. The recommended decoding preset
 
 The 30-example seed run validated the engineering path but overfit after 20 steps. Training loss reached `0.0051` while validation loss remained `3.8874`. Held-out generation failed to generalize, so `runs/700m_sft_v1/step_000020.pt` is not a release candidate and must not be used as the base for further SFT.
 
-## In Progress: SFT Corpus V1
+## Rejected: SFT Corpus V1
 
-Goal: 5k–20k clean, diverse prompt/response examples with a separate held-out validation split.
+The reviewed v1 corpus contained 5,412 examples: 4,984 synthetic Traversaal records, 398 Aya records, and 30 curated records. The full SFT run completed 161 steps and reached its best validation loss of `2.0531` at step 150.
 
-Initial selected sources:
+Held-out sampled and greedy generation both failed effectively 12 of 12 prompts. The model learned surface templates such as `حل:` and generic safety language but failed arithmetic, translation, correction, summarization, code-switching, and story generation. Checkpoints in `runs/700m_sft_corpus_v1` are rejected and must not be used as release or continuation checkpoints.
 
-- `CohereLabs/aya_dataset`: human-annotated Urdu subset, Apache-2.0
-- `large-traversaal/urdu-instruct`: Urdu instruction data, CC-BY-SA-4.0
-- local curated seed records for targeted math, safety, style, and code-switching coverage
+## In Progress: Balanced SFT Corpus V2
 
-Compiler requirements:
+Goal: a smaller diagnostic corpus with explicit task balance and auditable references before any further SFT training.
 
-- source-specific field mapping and language filters
-- Unicode normalization
-- minimum prompt/response quality checks
-- exact prompt/pair deduplication
-- exclusion of held-out evaluation prompts
-- deterministic source/category-aware train/validation split
-- source, category, filtering, and license statistics
+V2 policy:
 
-Exit criteria:
+- Exclude Aya because manual review found stale news, SEO-style prompts, and unreliable factual answers.
+- Exclude Traversaal open-domain QA because oversampled review found a material factual-error rate.
+- Keep all 30 project-curated records.
+- Cap reasoning and translation at 240 examples each.
+- Cap generation and classification at 200 examples each.
+- Cap sentiment at 160 examples and ethics at 80 examples.
+- Reject responses over 500 characters and prompts over 300 characters.
+- Emit a deterministic 120-record review sample spanning every source/category group.
+- Fail compilation if any configured category quota cannot be filled.
 
-- at least 5,000 accepted examples
-- no exact overlap with `eval/prompts_sft_heldout.txt`
-- manual review of at least 100 random examples
-- balanced coverage of QA, explanation, summarization, translation, math, correction, safety, code-switching, and creative writing
+Projected output is 1,150 examples: 1,120 category-balanced Traversaal records and 30 curated records.
 
-## Next: SFT V1 Training
+Exit criteria before creating a v2 training config:
 
-Start again from the clean base checkpoint, not the overfit smoke checkpoint.
+- all category quotas filled
+- no prompt, response, or held-out evaluation overlap
+- manual acceptance of the 120-record stratified review sample
+- no malformed arithmetic, mistranslation, task mismatch, boilerplate refusal, or repeated text in that sample
 
-- Run a one-node `dev-g` data/checkpoint smoke test
-- Train for 1–2 epochs with validation every 100 steps
-- Compare base and SFT checkpoints on the held-out suite
-- Reject runs with falling training loss and worsening held-out loss
-- Keep the base-model decoding preset fixed during comparisons
+Only after these gates pass should a short controlled v2 training configuration be added. It must start from `runs/700m_clean_continue_v1/step_000432.pt`, not any v1 SFT checkpoint.
 
 ## Later
 

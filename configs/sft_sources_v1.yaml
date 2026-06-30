@@ -5,9 +5,15 @@ include_curated_seed: true
 quality:
   min_prompt_chars: 10
   min_response_chars: 20
-  max_prompt_chars: 4000
-  max_response_chars: 8000
+  max_prompt_chars: 2000
+  max_response_chars: 3000
   min_combined_urdu_script_ratio: 0.30
+  max_pashto_specific_chars: 1
+  max_response_repeated_4gram_ratio: 0.08
+  max_response_repeated_6gram_ratio: 0.04
+  max_response_longest_repeated_ngram: 6
+  max_response_url_hits: 1
+  max_response_boilerplate_hits: 0
 exclude_prompt_files:
   - eval/prompts_sft_heldout.txt
 sources:

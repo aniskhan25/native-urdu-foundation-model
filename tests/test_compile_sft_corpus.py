@@ -17,6 +17,12 @@ QUALITY = {
     "max_prompt_chars": 1000,
     "max_response_chars": 1000,
     "min_combined_urdu_script_ratio": 0.3,
+    "max_pashto_specific_chars": 1,
+    "max_response_repeated_4gram_ratio": 0.08,
+    "max_response_repeated_6gram_ratio": 0.04,
+    "max_response_longest_repeated_ngram": 6,
+    "max_response_url_hits": 1,
+    "max_response_boilerplate_hits": 0,
 }
 
 
@@ -65,6 +71,52 @@ class CompileSftCorpusTests(unittest.TestCase):
         self.assertEqual(len(accepted), 1)
         self.assertEqual(rejected["duplicate_prompt"], 1)
         self.assertEqual(rejected["eval_overlap"], 1)
+
+    def test_rejects_pashto_mislabeled_as_urdu(self):
+        records = [
+            {
+                "prompt": "پوښتنہ پہ کومہ لار بہ وګرځی؟",
+                "response": "ځواب پہ پښتو ژبہ کې دی۔",
+                "source": "aya",
+                "category": "qa",
+            }
+        ]
+
+        accepted, rejected = accept_records(records, QUALITY, set())
+
+        self.assertEqual(accepted, [])
+        self.assertEqual(rejected["pashto_specific_chars"], 1)
+
+    def test_rejects_oversized_response(self):
+        quality = dict(QUALITY, max_response_chars=20)
+        records = [
+            {
+                "prompt": "یہ ایک مناسب سوال ہے",
+                "response": "یہ جواب مقررہ حد سے بہت زیادہ طویل ہے",
+                "source": "aya",
+                "category": "qa",
+            }
+        ]
+
+        accepted, rejected = accept_records(records, quality, set())
+
+        self.assertEqual(accepted, [])
+        self.assertEqual(rejected["long_response"], 1)
+
+    def test_rejects_repeated_response_span(self):
+        records = [
+            {
+                "prompt": "اس سوال کا واضح جواب دیں",
+                "response": "یہ ایک بار بار آنے والا جملہ ہے جو یہ ایک بار بار آنے والا جملہ ہے",
+                "source": "aya",
+                "category": "qa",
+            }
+        ]
+
+        accepted, rejected = accept_records(records, QUALITY, set())
+
+        self.assertEqual(accepted, [])
+        self.assertTrue(any(reason.startswith("response_repetition") for reason in rejected))
 
     def test_split_is_deterministic_and_keeps_groups(self):
         records = [

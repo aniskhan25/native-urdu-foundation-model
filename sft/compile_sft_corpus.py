@@ -13,8 +13,12 @@ from typing import Any, Iterable
 import yaml
 
 from data_pipeline.normalize_urdu import normalize_urdu, text_stats
+from data_pipeline.quality_filter import quality_metrics
 from eval.generate_samples import load_prompts
 from sft.prepare_seed_sft import SEED_RECORDS
+
+
+PASHTO_SPECIFIC_CHARS = frozenset("ځڅډړږښګڼټۍې")
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -72,6 +76,20 @@ def rejection_reason(record: dict[str, str], quality: dict[str, Any], excluded_p
     ratio = text_stats(f"{prompt} {response}").urdu_script_ratio
     if ratio < float(quality["min_combined_urdu_script_ratio"]):
         return "low_urdu_script_ratio"
+    pashto_chars = sum(char in PASHTO_SPECIFIC_CHARS for char in f"{prompt}{response}")
+    if pashto_chars > int(quality["max_pashto_specific_chars"]):
+        return "pashto_specific_chars"
+    response_metrics = quality_metrics(response)
+    if response_metrics.repeated_4gram_ratio > float(quality["max_response_repeated_4gram_ratio"]):
+        return "response_repetition_4gram"
+    if response_metrics.repeated_6gram_ratio > float(quality["max_response_repeated_6gram_ratio"]):
+        return "response_repetition_6gram"
+    if response_metrics.longest_repeated_ngram > int(quality["max_response_longest_repeated_ngram"]):
+        return "response_repetition_length"
+    if response_metrics.url_hits > int(quality["max_response_url_hits"]):
+        return "response_url"
+    if response_metrics.boilerplate_hits > int(quality["max_response_boilerplate_hits"]):
+        return "response_boilerplate"
     return None
 
 

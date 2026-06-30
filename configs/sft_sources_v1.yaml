@@ -14,6 +14,9 @@ quality:
   max_response_longest_repeated_ngram: 6
   max_response_url_hits: 1
   max_response_boilerplate_hits: 0
+  excluded_source_categories:
+    traversaal_urdu_instruct:
+      - qa
 exclude_prompt_files:
   - eval/prompts_sft_heldout.txt
 sources:

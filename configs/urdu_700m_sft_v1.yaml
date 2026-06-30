@@ -1,5 +1,5 @@
 project: native_urdu_foundation_model
-run_name: 700m_sft_v1
+run_name: 700m_sft_corpus_v1
 tokenizer:
   path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.model
   vocab_size: 32000
@@ -38,14 +38,14 @@ training:
   beta1: 0.9
   beta2: 0.95
   eps: 1.0e-8
-  global_batch_examples: 256
+  global_batch_examples: 64
   epochs: 2
   warmup_ratio: 0.03
   grad_clip: 1.0
   activation_checkpointing: true
-  checkpoint_interval_steps: 100
+  checkpoint_interval_steps: 50
   keep_last_checkpoints: 3
-  validation_interval_steps: 100
+  validation_interval_steps: 25
   validation_batches: 8
 infrastructure:
   platform: LUMI-G
@@ -53,4 +53,4 @@ infrastructure:
   parallelism: fsdp_full_shard
   nodes: 4
   logical_gpus_per_node: 8
-  output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_v1
+  output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_corpus_v1

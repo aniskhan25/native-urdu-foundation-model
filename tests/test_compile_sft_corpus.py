@@ -23,6 +23,7 @@ QUALITY = {
     "max_response_longest_repeated_ngram": 6,
     "max_response_url_hits": 1,
     "max_response_boilerplate_hits": 0,
+    "excluded_source_categories": {},
 }
 
 
@@ -89,6 +90,33 @@ class CompileSftCorpusTests(unittest.TestCase):
         self.assertEqual(len(accepted), 1)
         self.assertEqual(rejected["duplicate_prompt"], 1)
         self.assertEqual(rejected["eval_overlap"], 1)
+
+    def test_rejects_duplicate_response(self):
+        records = [
+            {"prompt": "پہلا مختلف سوال", "response": "ایک ہی مناسب جواب", "source": "a", "category": "qa"},
+            {"prompt": "دوسرا مختلف سوال", "response": "ایک ہی مناسب جواب", "source": "a", "category": "qa"},
+        ]
+
+        accepted, rejected = accept_records(records, QUALITY, set())
+
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(rejected["duplicate_response"], 1)
+
+    def test_rejects_excluded_source_category(self):
+        quality = dict(QUALITY, excluded_source_categories={"synthetic": ["qa"]})
+        records = [
+            {
+                "prompt": "ایک مصنوعی سوال",
+                "response": "ایک مصنوعی جواب",
+                "source": "synthetic",
+                "category": "qa",
+            }
+        ]
+
+        accepted, rejected = accept_records(records, quality, set())
+
+        self.assertEqual(accepted, [])
+        self.assertEqual(rejected["excluded_source_category"], 1)
 
     def test_rejects_pashto_mislabeled_as_urdu(self):
         records = [

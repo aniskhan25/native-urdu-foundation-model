@@ -356,7 +356,7 @@ sft_val.jsonl
 sft_summary.json
 ```
 
-It normalizes text, applies source language filters, rejects low-quality records, removes duplicate prompts/pairs, excludes exact held-out prompt overlap, creates a deterministic source/category-aware validation split, and reports accepted counts by source, category, license, and provenance. Review `sft_summary.json` and at least 100 random training examples before starting a full SFT run.
+It normalizes text, applies source language filters, rejects low-quality records, removes duplicate prompts, responses, and pairs, excludes exact held-out prompt overlap, creates a deterministic source/category-aware validation split, and reports accepted counts by source, category, license, and provenance. Review `sft_summary.json` and at least 100 random training examples before starting a full SFT run.
 
 Run the SFT preflight and one-node `dev-g` smoke test:
 
@@ -387,7 +387,7 @@ Generate from the latest SFT checkpoint with the recommended decoding preset:
 export CONFIG=configs/urdu_700m_sft_v1.yaml
 export CHECKPOINT=latest
 export PROMPTS=eval/prompts_sft_heldout.txt
-export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_v1/samples_sft_heldout.jsonl
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_corpus_v1/samples_sft_heldout.jsonl
 export MAX_NEW_TOKENS=96
 export TEMPERATURE=0.7
 export TOP_P=0.85

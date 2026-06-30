@@ -70,6 +70,9 @@ def rejection_reason(record: dict[str, str], quality: dict[str, Any], excluded_p
         return "empty"
     if prompt in excluded_prompts:
         return "eval_overlap"
+    excluded_categories = quality.get("excluded_source_categories", {}).get(record["source"], [])
+    if record["category"] in excluded_categories:
+        return "excluded_source_category"
     if len(prompt) < int(quality["min_prompt_chars"]):
         return "short_prompt"
     if len(response) < int(quality["min_response_chars"]):
@@ -114,12 +117,14 @@ def accept_records(
     rejected = Counter()
     prompt_hashes = set()
     pair_hashes = set()
+    response_hashes = set()
     for record in records:
         reason = rejection_reason(record, quality, excluded_prompts)
         if reason:
             rejected[reason] += 1
             continue
         prompt_hash = text_stats(record["prompt"]).sha256
+        response_hash = text_stats(record["response"]).sha256
         digest = pair_digest(record)
         if digest in pair_hashes:
             rejected["duplicate_pair"] += 1
@@ -127,8 +132,12 @@ def accept_records(
         if prompt_hash in prompt_hashes:
             rejected["duplicate_prompt"] += 1
             continue
+        if response_hash in response_hashes:
+            rejected["duplicate_response"] += 1
+            continue
         prompt_hashes.add(prompt_hash)
         pair_hashes.add(digest)
+        response_hashes.add(response_hash)
         accepted.append(record)
     return accepted, rejected
 

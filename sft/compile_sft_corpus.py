@@ -15,6 +15,7 @@ import yaml
 from data_pipeline.normalize_urdu import normalize_urdu, text_stats
 from data_pipeline.quality_filter import quality_metrics
 from eval.generate_samples import load_prompts
+from sft.curated_tasks_v2 import CURATED_TASK_RECORDS
 from sft.prepare_seed_sft import SEED_RECORDS
 
 
@@ -264,14 +265,14 @@ def load_excluded_prompts(config_path: Path, paths: list[str]) -> set[str]:
     return excluded
 
 
-def curated_seed_source() -> dict[str, Any]:
+def local_source(source_id: str, provenance: str) -> dict[str, Any]:
     return {
-        "id": "curated_seed_v1",
+        "id": source_id,
         "prompt_field": "prompt",
         "response_field": "response",
         "category_field": "category",
         "license": "project-curated",
-        "provenance": "human_curated",
+        "provenance": provenance,
     }
 
 
@@ -285,16 +286,20 @@ def compile_corpus(
     candidates = []
     source_stats: dict[str, dict[str, Any]] = {}
 
+    local_sets = []
     if config.get("include_curated_seed", True):
-        source = curated_seed_source()
-        seed_records = [canonicalize_record(record, source) for record in SEED_RECORDS]
-        candidates.extend(seed_records)
+        local_sets.append((local_source("curated_seed_v1", "human_curated"), SEED_RECORDS))
+    if config.get("include_curated_tasks_v2", False):
+        local_sets.append((local_source("curated_tasks_v2", "deterministic_project_generated"), CURATED_TASK_RECORDS))
+    for source, records in local_sets:
+        normalized_records = [canonicalize_record(record, source) for record in records]
+        candidates.extend(normalized_records)
         source_stats[source["id"]] = {
             "dataset": "local",
             "license": source["license"],
             "provenance": source["provenance"],
-            "seen": len(seed_records),
-            "matched": len(seed_records),
+            "seen": len(normalized_records),
+            "matched": len(normalized_records),
         }
 
     for source in config["sources"]:

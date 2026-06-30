@@ -39,19 +39,21 @@ Held-out sampled and greedy generation both failed effectively 12 of 12 prompts.
 
 Goal: a smaller diagnostic corpus with explicit task balance and auditable references before any further SFT training.
 
-V2 policy:
+The first balanced candidate compiled in job `19619224` with 1,150 records, but its 120-record review sample failed. It still contained malformed synthetic arithmetic, awkward translations, task mismatches, and only two or three examples for several held-out capabilities. That candidate must not be trained.
 
-- Exclude Aya because manual review found stale news, SEO-style prompts, and unreliable factual answers.
-- Exclude Traversaal open-domain QA because oversampled review found a material factual-error rate.
+Replacement v2 policy:
+
+- Use no external or benchmark records.
 - Keep all 30 project-curated records.
-- Cap reasoning and translation at 240 examples each.
-- Cap generation and classification at 200 examples each.
-- Cap sentiment at 160 examples and ethics at 80 examples.
-- Reject responses over 500 characters and prompts over 300 characters.
+- Generate 240 arithmetic examples with answers calculated directly by code.
+- Generate 80 bidirectional Urdu-English translations from audited sentence templates.
+- Generate 60 examples each for summarization, Urdu correction, code-switching, and constrained stories.
+- Generate 40 evidence-aware uncertainty examples.
+- Reject responses over 500 characters and prompts over 600 characters.
 - Emit a deterministic 120-record review sample spanning every source/category group.
 - Fail compilation if any configured category quota cannot be filled.
 
-Projected output is 1,150 examples: 1,120 category-balanced Traversaal records and 30 curated records.
+Projected output is 630 examples: 600 deterministic task records and 30 curated records, split into 570 training and 60 validation examples.
 
 Exit criteria before creating a v2 training config:
 

@@ -166,6 +166,42 @@ SIF=/appl/local/laifs/containers/lumi-multitorch-latest.sif
 
 The LUMI Slurm jobs follow the official LUMI AI Guide multi-GPU pattern: `module purge`, load `lumi-aif-singularity-bindings`, run the LAIF SIF with `singularity run`, set a Slurm-job-derived `MASTER_PORT`, and launch distributed training with `python -m torch.distributed.run --numa-binding=exclusive`. Run `slurm/check_container_requirements.sh` first for Python packages and `slurm/check_gpu_container.sh` before training to verify MI250X visibility.
 
+## Frozen Baseline
+
+The accepted foundation baseline is defined in `configs/baseline_v1.yaml`. Generate its content-addressed lock once from a clean, committed checkout on LUMI:
+
+```bash
+git pull
+git status --short  # must print nothing
+sbatch slurm/freeze_baseline.sh
+```
+
+This hashes the clean base checkpoint, tokenizer, vocabulary, training manifests, configurations, and normalization policy. The lock is written outside the repository:
+
+```text
+/scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/baseline_v1.lock.json
+```
+
+Verify the frozen baseline without replacing the lock:
+
+```bash
+MODE=verify sbatch --export=ALL slurm/freeze_baseline.sh
+```
+
+Verification fails if an artifact changed, the repository is dirty, or the checked-out commit differs from the lock. The current run history and checkpoint decisions are recorded in `docs/run_registry.md`; the gated implementation plan is in `docs/roadmap.md`.
+
+Complete the Phase 0 load check with the frozen checkpoint and fixed base prompts:
+
+```bash
+export CONFIG=configs/urdu_700m_clean_continue_v1.yaml
+export CHECKPOINT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/step_000432.pt
+export PROMPTS=eval/prompts_urdu.txt
+export OUTPUT=/scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/baseline_v1/samples.jsonl
+export MAX_NEW_TOKENS=96 TEMPERATURE=0.7 TOP_P=0.85 TOP_K=40
+export REPETITION_PENALTY=1.12 NO_REPEAT_NGRAM_SIZE=6
+sbatch --partition=dev-g --time=00:20:00 --export=ALL slurm/generate_samples.sh
+```
+
 Prepare the current 685M-token dress rehearsal manifest:
 
 ```bash

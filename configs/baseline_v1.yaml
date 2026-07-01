@@ -1,0 +1,56 @@
+schema_version: 1
+baseline_id: urdu_700m_clean_base_v1
+status: accepted_foundation_baseline
+project:
+  account: project_462000131
+  repository: /scratch/project_462000131/anisrahm/native-urdu-foundation-model
+  data_root: /scratch/project_462000131/anisrahm/native-urdu-foundation-data
+model:
+  parameters: 728704512
+  config: configs/urdu_700m_clean_continue_v1.yaml
+  checkpoint: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/step_000432.pt
+tokenizer:
+  config: configs/tokenizer_32k.yaml
+  model: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.model
+  vocabulary: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.vocab
+  normalization: custom_urdu_nfkc_then_nfc_v1
+lineage:
+  - run: pilot_700m_685m_tokens
+    config: configs/urdu_700m_pilot.yaml
+    manifest: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/dress_rehearsal_manifest.json
+    output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_pilot
+  - run: expanded_v1_700m_2_43b_tokens
+    config: configs/urdu_700m_expanded_v1.yaml
+    manifest: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/expanded_v1_manifest.json
+    output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_expanded_v1
+  - run: clean_continue_v1_700m_453m_tokens
+    config: configs/urdu_700m_clean_continue_v1.yaml
+    manifest: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/clean_v1_manifest.json
+    output_dir: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1
+rejected_checkpoints:
+  - /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_v1/step_000020.pt
+  - /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_corpus_v1
+  - /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_sft_balanced_v2
+artifacts:
+  - id: base_checkpoint
+    path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/runs/700m_clean_continue_v1/step_000432.pt
+  - id: tokenizer_model
+    path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.model
+  - id: tokenizer_vocabulary
+    path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/tokenizer/urdu_bpe_32k.vocab
+  - id: expanded_manifest
+    path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/expanded_v1_manifest.json
+  - id: pilot_manifest
+    path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/dress_rehearsal_manifest.json
+  - id: clean_manifest
+    path: /scratch/project_462000131/anisrahm/native-urdu-foundation-data/manifests/clean_v1_manifest.json
+  - id: tokenizer_config
+    path: configs/tokenizer_32k.yaml
+  - id: expanded_training_config
+    path: configs/urdu_700m_expanded_v1.yaml
+  - id: pilot_training_config
+    path: configs/urdu_700m_pilot.yaml
+  - id: clean_training_config
+    path: configs/urdu_700m_clean_continue_v1.yaml
+  - id: normalization_policy
+    path: docs/normalization_policy.md

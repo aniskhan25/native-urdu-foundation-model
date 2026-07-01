@@ -64,14 +64,27 @@ Exit criteria before creating a v2 training config:
 
 All corpus gates passed. The controlled v2 training config starts from `runs/700m_clean_continue_v1/step_000432.pt`, not any v1 SFT checkpoint.
 
-## Next: Controlled SFT V2 Diagnostic
+## Controlled SFT V2 Diagnostic: Rejected
 
 - Four `dev-g` nodes with 32 logical GPUs; the one-node attempt exhausted memory with only eight FSDP shards
 - Global batch 32 for 36 optimizer steps over two epochs
 - Peak learning rate `1e-5`
 - Validation every 5 steps
 - Isolated output directory `runs/700m_sft_balanced_v2`
-- Held-out sampled and greedy generation required before accepting any checkpoint
+- Job `19643795` completed all 36 steps; validation loss reached `0.5144` at step 35 and ended at `0.5235`
+- Held-out sampled decoding avoided repetition but failed both arithmetic prompts, translation, grammar correction, summarization, code-switching, and constrained story generation
+- Greedy decoding copied prompts or repeated phrases and performed worse
+- The only clear held-out success was the evidence-uncertainty response
+- The train/validation split mixed examples from the same generated template families, so validation loss measured template interpolation rather than task generalization
+- Do not promote or continue training from `runs/700m_sft_balanced_v2`
+
+## Next: SFT V3 Corpus
+
+- Keep the clean base checkpoint as the training start
+- Define validation and test sets by held-out task/template families before compiling training data
+- Replace repeated synthetic templates with a larger human-authored or individually reviewed Urdu task set
+- Require exact task checks for arithmetic and constraints in addition to repetition and script-ratio metrics
+- Run a short diagnostic only after the corpus passes family-overlap and manual-review gates
 
 ## Later
 

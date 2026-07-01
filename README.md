@@ -417,3 +417,5 @@ sbatch --export=ALL slurm/generate_samples.sh
 SFT configs set `generation.prompt_template: urdu_sft`, so generation automatically applies the same `ہدایت:` / `جواب:` template used during training. Set `PROMPT_TEMPLATE=raw` only when evaluating an unformatted base checkpoint with an SFT config.
 
 Use `eval/prompts_sft_heldout.txt` for SFT quality checks. The original prompts in `eval/prompts_urdu.txt` are included in the curated seed training records and therefore measure memorization rather than generalization after SFT.
+
+The balanced v2 diagnostic is rejected. Although its validation loss reached `0.5144`, held-out generation failed arithmetic, translation, grammar correction, summarization, code-switching, and constrained story tasks. The random validation split contained the same generated template families as training and therefore overstated generalization. Do not use `runs/700m_sft_balanced_v2` as a release checkpoint or as the starting point for further tuning.

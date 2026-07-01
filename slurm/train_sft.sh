@@ -5,6 +5,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gpus-per-node=8
 #SBATCH --cpus-per-task=56
+#SBATCH --mem=0
 #SBATCH --time=02:00:00
 #SBATCH --account=project_462000131
 

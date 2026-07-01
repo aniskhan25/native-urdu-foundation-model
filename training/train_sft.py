@@ -52,7 +52,7 @@ def load_model_weights(model: object, checkpoint_path: Path) -> None:
     import torch
     import torch.distributed as dist
 
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", mmap=True)
     if dist.is_available() and dist.is_initialized():
         from torch.distributed.fsdp import FullStateDictConfig, FullyShardedDataParallel as FSDP, StateDictType
 

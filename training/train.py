@@ -148,7 +148,7 @@ def load_checkpoint_state(model: object, optimizer: object, checkpoint_path: Pat
     import torch
     import torch.distributed as dist
 
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", mmap=True)
     if dist.is_available() and dist.is_initialized():
         from torch.distributed.fsdp import (
             FullOptimStateDictConfig,
